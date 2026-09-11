@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>荣光之影 · 牌桌</title>
+<meta name="description" content="《In the Shadow of Glory 荣光之影》双人书信游戏的离线辅助工具：抽牌查表、角色卡记录、信纸写信与导出。">
+<style>
+:root{
+  --felt:#16262b;
+  --felt-deep:#0e1a1e;
+  --felt-up:#1d3138;
+  --hair:rgba(239,231,214,.14);
+  --hair-strong:rgba(239,231,214,.28);
+  --paper:#efe7d6;
+  --paper-2:#e3d8c1;
+  --ink:#1c1a17;
+  --ink-soft:#54504a;
+  --crimson:#8e1f28;
+  --crimson-lit:#c2505a;
+  --brass:#c08a3e;
+  --mist:#9db0b3;
+  --serif:"Songti SC","SimSun","Source Han Serif SC","Noto Serif CJK SC","STSong",Georgia,serif;
+  --sans:"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,"Courier New",monospace;
+  --rail:150px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--felt);
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(192,138,62,.10), transparent 60%),
+    radial-gradient(100% 70% at 50% 110%, rgba(0,0,0,.45), transparent 55%);
+  background-attachment:fixed;
+  color:#e8e0d0;
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.75;
+  -webkit-text-size-adjust:100%;
+}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:600;line-height:1.35;margin:0}
+p{margin:0 0 .8em}
+a{color:var(--brass)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+/* ---------- 骨架 ---------- */
+.app{display:flex;min-height:100vh}
+.rail{
+  width:var(--rail);flex:none;position:sticky;top:0;height:100vh;
+  border-right:1px solid var(--hair);
+  background:linear-gradient(180deg,var(--felt-deep),rgba(14,26,30,.4));
+  display:flex;flex-direction:column;padding:22px 0 14px;
+}
+.brand{padding:0 18px 20px;border-bottom:1px solid var(--hair);margin-bottom:14px}
+.brand b{display:block;font-family:var(--serif);font-size:21px;letter-spacing:.06em;color:var(--paper)}
+.brand span{display:block;font-size:10.5px;color:var(--mist);letter-spacing:.16em;margin-top:4px;font-family:var(--mono)}
+.rail nav{display:flex;flex-direction:column;gap:1px;flex:1}
+.rail nav button{
+  background:none;border:0;text-align:left;padding:9px 18px;cursor:pointer;
+  color:var(--mist);font-size:14.5px;letter-spacing:.05em;position:relative;
+}
+.rail nav button:hover{color:var(--paper)}
+.rail nav button[aria-current="true"]{color:var(--paper);background:rgba(239,231,214,.06)}
+.rail nav button[aria-current="true"]::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--crimson-lit)}
+.rail nav button .suit{color:var(--mist);margin-right:7px;font-size:12px}
+.rail nav button .suit.r{color:var(--crimson-lit)}
+.rail nav button[aria-current="true"] .suit,.rail nav button[aria-current="true"] .suit.r{color:var(--brass)}
+.railfoot{padding:12px 18px 0;font-size:11px;color:var(--mist);border-top:1px solid var(--hair);line-height:1.6}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.statusbar{
+  position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;
+  padding:10px 26px;border-bottom:1px solid var(--hair);
+  background:rgba(14,26,30,.93);backdrop-filter:blur(8px);font-size:13px;
+}
+.stat{display:flex;align-items:center;gap:7px;color:var(--mist)}
+.stat b{color:var(--paper);font-weight:600}
+.pips{display:inline-flex;gap:3px}
+.pip{width:9px;height:9px;border:1px solid var(--hair-strong);border-radius:50%}
+.pip.on{background:var(--crimson-lit);border-color:var(--crimson-lit)}
+.pip.warn{background:var(--brass);border-color:var(--brass)}
+.statusbar .spacer{flex:1}
+.wrap{padding:30px 26px 90px;max-width:1010px;width:100%;margin:0 auto}
+
+/* ---------- 通用块 ---------- */
+.sheet{
+  background:rgba(239,231,214,.045);
+  border:1px solid var(--hair);
+  padding:22px 24px;margin-bottom:22px;
+}
+.sheet > h2{font-size:22px;color:var(--paper);margin-bottom:4px}
+.sheet > h2 .sub{font-family:var(--sans);font-size:12px;color:var(--mist);margin-left:10px;letter-spacing:.08em}
+.sheet > .lede{color:var(--mist);font-size:13.5px;margin:6px 0 18px;max-width:66ch}
+h3.mini{font-size:15px;color:var(--paper);margin:20px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--hair)}
+h3.mini:first-child{margin-top:0}
+.muted{color:var(--mist)}
+.small{font-size:12.5px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+
+button.btn{
+  background:rgba(239,231,214,.07);border:1px solid var(--hair-strong);color:var(--paper);
+  padding:7px 14px;cursor:pointer;font-size:13.5px;letter-spacing:.04em;border-radius:2px;
+  transition:background .15s,border-color .15s;
+}
+button.btn:hover{background:rgba(239,231,214,.14)}
+button.btn.primary{background:var(--crimson);border-color:var(--crimson);color:#f6ece0}
+button.btn.primary:hover{background:#a5262f}
+button.btn.ghost{background:none;color:var(--mist)}
+button.btn.ghost:hover{color:var(--paper)}
+button.btn.tiny{padding:3px 8px;font-size:12px}
+button.btn.fx{border-color:rgba(192,138,62,.55);color:var(--brass);background:rgba(192,138,62,.08)}
+button.btn.fx:hover{background:rgba(192,138,62,.18);color:#efdcb8}
+button.btn:disabled{opacity:.35;cursor:not-allowed}
+
+label.field{display:block;margin-bottom:12px}
+label.field > span{display:block;font-size:12px;color:var(--mist);margin-bottom:4px;letter-spacing:.08em}
+input[type=text],input[type=number],select,textarea{
+  width:100%;background:rgba(0,0,0,.22);border:1px solid var(--hair);color:var(--paper);
+  padding:8px 10px;border-radius:2px;font-family:var(--sans);
+}
+textarea{resize:vertical;line-height:1.8}
+input[type=text]:hover,textarea:hover,select:hover{border-color:var(--hair-strong)}
+
+.tag{display:inline-block;border:1px solid var(--hair-strong);padding:2px 9px;font-size:12px;color:var(--paper);border-radius:2px}
+.tag.red{color:var(--crimson-lit);border-color:rgba(194,80,90,.5)}
+.tag.gold{color:var(--brass);border-color:rgba(192,138,62,.45)}
+
+.notice{border-left:3px solid var(--brass);background:rgba(192,138,62,.08);padding:12px 16px;margin:14px 0;font-size:13.5px}
+.notice.danger{border-left-color:var(--crimson-lit);background:rgba(194,80,90,.10)}
+
+/* ---------- 扑克牌 ---------- */
+.cardface{
+  width:130px;aspect-ratio:5/7;background:var(--paper);color:var(--ink);
+  border-radius:7px;position:relative;flex:none;
+  box-shadow:0 10px 26px rgba(0,0,0,.45), inset 0 0 0 1px rgba(28,26,23,.14);
+  font-family:var(--serif);user-select:none;
+}
+.cardface.red{color:var(--crimson)}
+.cardface .ix{position:absolute;line-height:1;text-align:center}
+.cardface .ix .r{font-size:19px;font-weight:600;display:block}
+.cardface .ix .s{font-size:14px;display:block;margin-top:1px}
+.cardface .ix.tl{top:8px;left:9px}
+.cardface .ix.br{bottom:8px;right:9px;transform:rotate(180deg)}
+.cardface .center{position:absolute;inset:0;display:grid;place-items:center;font-size:46px;opacity:.92}
+.cardface.joker .center{font-size:20px;letter-spacing:.3em;writing-mode:vertical-rl}
+.cardface.back{
+  background:
+    repeating-linear-gradient(45deg,#7d2029 0 6px,#6b1a23 6px 12px);
+  box-shadow:0 10px 26px rgba(0,0,0,.45), inset 0 0 0 6px var(--paper), inset 0 0 0 7px rgba(28,26,23,.2);
+}
+.cardface.sm{width:86px}
+.cardface.sm .ix .r{font-size:14px}
+.cardface.sm .ix .s{font-size:11px}
+.cardface.sm .center{font-size:30px}
+
+.flipwrap{perspective:900px;width:130px;flex:none}
+.flipwrap .cardface{animation:deal .45s cubic-bezier(.2,.75,.3,1)}
+@keyframes deal{from{transform:rotateY(85deg) translateY(-8px);opacity:.2}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.flipwrap .cardface{animation:none}}
+
+.draw{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.draw .result{flex:1;min-width:240px}
+.draw .result .headline{font-family:var(--serif);font-size:20px;color:var(--paper);margin-bottom:6px}
+.draw .result .body{color:#d8cfbe;max-width:60ch}
+
+/* ---------- 角色卡 ---------- */
+.dossier{background:rgba(239,231,214,.05);border:1px solid var(--hair);padding:0}
+.dossier .head{display:flex;justify-content:space-between;gap:16px;align-items:baseline;padding:18px 22px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
+.dossier .head h2{font-size:26px;color:var(--paper)}
+.dossier .head h2 small{font-family:var(--sans);font-size:13px;color:var(--mist);margin-left:8px}
+.dossier .body{padding:18px 22px}
+.kv{display:grid;grid-template-columns:88px 1fr;gap:6px 14px;align-items:baseline;margin-bottom:14px}
+.kv dt{color:var(--mist);font-size:12.5px;letter-spacing:.08em}
+.kv dd{margin:0;color:var(--paper)}
+
+.goal{border:1px solid var(--hair);padding:10px 12px;margin-bottom:9px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.goal .txt{flex:1;min-width:150px}
+.goal .txt em{font-style:normal;font-size:11.5px;color:var(--mist);display:block;letter-spacing:.08em}
+.boxes{display:flex;gap:5px}
+.boxes i{width:15px;height:15px;border:1px solid var(--hair-strong);display:inline-block;cursor:pointer;position:relative}
+.boxes i.on{background:var(--brass);border-color:var(--brass)}
+.goal.done{border-color:rgba(192,138,62,.5)}
+.listline{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--hair)}
+.listline:last-child{border-bottom:0}
+.listline .grow{flex:1}
+.scarline{color:#e3c9c0}
+
+/* ---------- 写信 ---------- */
+.papergrid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.swatch{border:1px solid var(--hair-strong);padding:5px 11px;cursor:pointer;font-size:12.5px;border-radius:2px;background:none;color:var(--mist)}
+.swatch[aria-pressed="true"]{border-color:var(--brass);color:var(--paper);background:rgba(192,138,62,.12)}
+.letterstage{background:rgba(0,0,0,.2);padding:20px;border:1px solid var(--hair);overflow:auto}
+.letter{
+  width:100%;max-width:720px;margin:0 auto;min-height:420px;padding:52px 56px;
+  background:var(--lp-bg,#ece2cd);color:var(--lp-ink,#33291d);position:relative;
+  box-shadow:0 18px 40px rgba(0,0,0,.4);font-family:var(--serif);font-size:16px;line-height:2.05;
+}
+.letter.f-sans{font-family:var(--sans)}
+.letter.f-mono{font-family:var(--mono);font-size:14.5px;line-height:1.95}
+.letter .lt-to{font-size:17px;margin-bottom:18px;color:var(--lp-accent,#8e1f28)}
+.letter .lt-body{white-space:pre-wrap;word-break:break-word}
+.letter .lt-sign{margin-top:26px;text-align:right;color:var(--lp-accent,#8e1f28)}
+.letter .lt-meta{position:absolute;top:20px;right:26px;font-size:11px;opacity:.55;font-family:var(--sans);letter-spacing:.1em}
+.letter.r-lines .lt-body{
+  background-image:repeating-linear-gradient(transparent 0 31px, rgba(0,0,0,.13) 31px 32px);
+  background-attachment:local;line-height:32px;
+}
+.letter.r-grid .lt-body{
+  background-image:repeating-linear-gradient(transparent 0 31px, rgba(0,0,0,.10) 31px 32px),
+                   repeating-linear-gradient(90deg,transparent 0 31px, rgba(0,0,0,.07) 31px 32px);
+  background-attachment:local;line-height:32px;
+}
+.letter.d-margin::before{content:"";position:absolute;left:38px;top:0;bottom:0;width:1px;background:rgba(140,40,40,.35)}
+.letter.d-edge{box-shadow:0 18px 40px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.08)}
+.letter.d-perf{border-top:2px dashed rgba(0,0,0,.25);border-bottom:2px dashed rgba(0,0,0,.25)}
+.letter.d-seal .lt-head{border-bottom:2px solid var(--lp-accent);padding-bottom:8px;margin-bottom:20px;font-size:13px;letter-spacing:.3em;font-family:var(--sans)}
+.letter.d-masthead .lt-head{border-top:3px double currentColor;border-bottom:3px double currentColor;padding:6px 0;margin-bottom:22px;text-align:center;font-size:13px;letter-spacing:.5em}
+.letter.d-stain::after{content:"";position:absolute;left:38px;bottom:34px;width:88px;height:88px;border-radius:50%;
+  border:3px solid rgba(126,86,38,.10);box-shadow:inset 0 0 14px rgba(126,86,38,.05);pointer-events:none}
+.letter.d-seal::before{content:"";position:absolute;left:0;right:0;top:26px;height:2px;background:var(--lp-accent);opacity:.75}
+.letter.d-masthead::before{content:"";position:absolute;left:34px;right:34px;top:24px;height:5px;
+  border-top:2px solid currentColor;border-bottom:1px solid currentColor;opacity:.75}
+.letter.d-masthead::after{content:"";position:absolute;left:34px;right:34px;bottom:24px;height:3px;
+  border-top:1px solid currentColor;opacity:.5}
+.letter.d-perf::before{content:"";position:absolute;left:0;right:0;top:14px;border-top:1px dashed rgba(0,0,0,.3)}
+
+.mailrow{display:flex;gap:14px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--hair);cursor:pointer}
+.mailrow:hover{background:rgba(239,231,214,.04)}
+.mailrow .wk{font-family:var(--mono);font-size:12px;color:var(--brass);flex:none;width:64px}
+.mailrow .ex{flex:1;color:var(--mist);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- 查表 ---------- */
+table.lookup{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:6px}
+table.lookup th,table.lookup td{border-bottom:1px solid var(--hair);padding:6px 10px;text-align:left;vertical-align:top}
+table.lookup th{color:var(--mist);font-weight:500;font-size:12px;letter-spacing:.1em}
+table.lookup td.rk{font-family:var(--serif);color:var(--brass);width:44px}
+table.lookup td.blk{color:#ded5c3}
+table.lookup td.red{color:var(--crimson-lit)}
+details.evt{border:1px solid var(--hair);margin-bottom:8px}
+details.evt>summary{padding:8px 12px;cursor:pointer;color:var(--paper);font-family:var(--serif);font-size:15px}
+details.evt>summary::marker{color:var(--brass)}
+details.evt ol{margin:0;padding:0 18px 12px 34px;color:#d4cbba;font-size:13.5px}
+details.evt li{margin-bottom:6px}
+details.evt b{color:var(--brass);font-weight:600}
+
+/* ---------- 日志 ---------- */
+.weekcard{border:1px solid var(--hair);padding:14px 16px;margin-bottom:12px}
+.weekcard h4{color:var(--paper);font-size:16px;margin-bottom:8px}
+.weekcard .line{font-size:13.5px;color:#d0c8b8;margin-bottom:3px}
+.weekcard .line b{color:var(--brass);font-weight:500;font-family:var(--mono);font-size:12px;margin-right:8px}
+
+/* ---------- 弹层 ---------- */
+.modal{position:fixed;inset:0;background:rgba(6,12,14,.82);z-index:100;display:grid;place-items:center;padding:20px}
+.modal .box{background:var(--felt-up);border:1px solid var(--hair-strong);max-width:560px;width:100%;max-height:84vh;overflow:auto;padding:22px 24px}
+.modal h3{font-size:19px;color:var(--paper);margin-bottom:10px}
+.pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:12px 0}
+.pickgrid button{text-align:left;background:rgba(0,0,0,.2);border:1px solid var(--hair);color:#ded5c3;padding:7px 10px;cursor:pointer;font-size:13px}
+.pickgrid button:hover{border-color:var(--brass);color:var(--paper)}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--paper);color:var(--ink);
+  padding:9px 18px;border-radius:2px;z-index:200;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+
+/* ---------- 手机 ---------- */
+@media (max-width:840px){
+  .app{flex-direction:column}
+  .rail{width:100%;height:auto;position:sticky;top:0;z-index:30;padding:12px 0 0;border-right:0;border-bottom:1px solid var(--hair)}
+  .brand{padding:0 16px 10px;margin-bottom:8px}
+  .brand b{font-size:18px}
+  .rail nav{flex-direction:row;overflow-x:auto;gap:0;padding:0 8px;scrollbar-width:none}
+  .rail nav::-webkit-scrollbar{display:none}
+  .rail nav button{white-space:nowrap;padding:8px 12px;font-size:14px}
+  .rail nav button[aria-current="true"]::before{left:12px;right:12px;top:auto;bottom:2px;width:auto;height:2px}
+  .railfoot{display:none}
+  .statusbar{position:static;padding:8px 14px;font-size:12.5px;gap:6px 14px;border-top:1px solid var(--hair)}
+  .wrap{padding:18px 14px 70px}
+  .sheet{padding:16px 14px}
+  .letter{padding:32px 26px;font-size:15px}
+  .kv{grid-template-columns:76px 1fr}
+}
+
+/* ---------- 打印 ---------- */
+#printarea{display:none}
+@media print{
+  @page{size:A4;margin:8mm}
+  body{background:#fff;color:#000}
+  body.printing .app{display:none}
+  body.printing #printarea{display:block}
+  .psheet{display:flex;flex-wrap:wrap;gap:0;page-break-after:always;align-content:flex-start}
+  .pcard{
+    width:63mm;height:88mm;border:.3pt solid #bbb;position:relative;
+    font-family:var(--serif);color:#111;overflow:hidden;
+  }
+  .pcard.red{color:#9b1f28}
+  .pcard .ix{position:absolute;line-height:1;text-align:center}
+  .pcard .ix .r{font-size:15pt;font-weight:600;display:block}
+  .pcard .ix .s{font-size:11pt;display:block}
+  .pcard .ix.tl{top:5mm;left:5mm}
+  .pcard .ix.br{bottom:7mm;right:5mm;transform:rotate(180deg)}
+  .pcard .center{position:absolute;inset:0;display:grid;place-items:center;font-size:42pt}
+  .pcard .foot{position:absolute;bottom:2mm;left:0;right:0;text-align:center;font-size:4.6pt;letter-spacing:.34em;color:#aaa}
+  .pcard.back{background:repeating-linear-gradient(45deg,#8e1f28 0 2mm,#7a1a23 2mm 4mm);border:0;box-shadow:inset 0 0 0 3mm #fff,inset 0 0 0 3.2mm #ccc}
+  .refcard{width:100%;height:138mm;border-bottom:.3pt dashed #999;padding:5mm 6mm;page-break-inside:avoid;
+    font-family:var(--serif);color:#111;font-size:7.4pt;line-height:1.5;position:relative;overflow:hidden}
+  .refcard h4{font-size:13pt;margin:0 0 2mm;border-bottom:.5pt solid #000;padding-bottom:1mm;display:flex;justify-content:space-between}
+  .refcard h4 span{font-size:7pt;font-weight:400;color:#666;letter-spacing:.2em}
+  .refcard .cols{column-count:2;column-gap:6mm}
+  .refcard dl{margin:0 0 1.6mm;break-inside:avoid}
+  .refcard dt{font-size:6.4pt;color:#8e1f28;letter-spacing:.12em;margin-bottom:.3mm}
+  .refcard dd{margin:0}
+  .refcard dd .b::before{content:"♠ ";color:#111}
+  .refcard dd .r{color:#9b1f28;display:block}
+  .refcard dd .r::before{content:"♥ "}
+  .refcard .ev{break-inside:avoid;margin-bottom:1.6mm}
+  .refcard .ev b{color:#8e1f28}
+  .refcard ol{margin:0;padding-left:4mm}
+  body.printing-letter .app{display:none}
+  body.printing-letter #printarea{display:block}
+  .printletter{width:100%;min-height:270mm;padding:18mm 20mm;font-family:var(--serif);font-size:11pt;line-height:2;
+    background:var(--lp-bg);color:var(--lp-ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .printletter .lt-body{white-space:pre-wrap}
+  .printletter .lt-to{margin-bottom:8mm;color:var(--lp-accent)}
+  .printletter .lt-sign{margin-top:10mm;text-align:right;color:var(--lp-accent)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand">
+      <b>荣光之影</b>
+      <span>IN THE SHADOW OF GLORY</span>
+    </div>
+    <nav id="nav"></nav>
+    <div class="railfoot">
+      原作 Jessie Lee &amp; Brandon Lee<br>CC BY 4.0 · 离线辅助工具
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="statusbar" id="statusbar"></div>
+    <div class="wrap">
+      <section class="panel" id="p-setup"></section>
+      <section class="panel" id="p-char"></section>
+      <section class="panel" id="p-turn"></section>
+      <section class="panel" id="p-write"></section>
+      <section class="panel" id="p-mail"></section>
+      <section class="panel" id="p-tables"></section>
+      <section class="panel" id="p-cards"></section>
+      <section class="panel" id="p-about"></section>
+    </div>
+  </div>
+</div>
+
+<div id="modalhost"></div>
+<div id="printarea"></div>
+<script>
+/* ==========================================================================
+   《荣光之影 In the Shadow of Glory》资料表
+   原作：Jessie Lee & Brandon Lee — CC BY 4.0
+   中文译本：用户提供
+   ========================================================================== */
+
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+/* 双色表：{A:[黑,红], ...}  单色表：{A:'...', ...} */
+
+const T = {};
+
+T.world = {
+  A:['世界被反派和／或英雄泛滥占据','过去的一场事件几乎消灭了所有超能力者'],
+  2:['超能力被过度使用，环境正在衰败','超能力者的存在一直对公众保密'],
+  3:['一场浩劫最近摧毁了世界','世界被分割成一个个受管控的城邦'],
+  4:['世界上部分地区成了超能力失效区','末日之后，人类只剩下最后一座堡垒'],
+  5:['你们是仅有的两个拥有超能力的人','世界正处于英雄与反派大战之后的余波中'],
+  6:['一种“治愈”超能力的药物正被强制施用','人类已研发出复制超能力的技术'],
+  7:['一家巨型企业把英雄变成了商品','英雄与反派诞生于人类的希望与恐惧'],
+  8:['超能力者不受社会欢迎','一场诡异的宇宙事件让平行现实交织在一起'],
+  9:['超能力者被视为宗教使者','超能力者总是成对出现，一英雄一反派，彼此羁绊'],
+  10:['超能力者是高等存在所玩的宇宙游戏中的棋子','时间旅行者常常干预英雄与反派的关键事件'],
+  J:['超能力者因其能力而遭到猎杀','一股无法解释的力量把超能力者彼此吸引到一起'],
+  Q:['超能力者是进化的下一步','一家研究所在拿超能力者做实验'],
+  K:['超能力者按能力相近聚居成群','超能力者隶属于一个正在征服地球的银河联邦']
+};
+
+T.powerRule = {
+  A:'超能力与人的情绪状态相连，随心情增强或失效',
+  2:'超能力只在特定月相或行星连珠时显现',
+  3:'超能力与一件古代神器相连',
+  4:'超能力由一种病毒引起',
+  5:'超能力不稳定，会随时间不断变异',
+  6:'超能力由濒死体验唤醒',
+  7:'超能力者会随年龄增长而失去能力',
+  8:'超能力者可以把能力转移给他人，但要付出代价',
+  9:'超能力是人类与外星DNA融合的结果',
+  10:'超能力与特定地点绑定，离开那里会让人变弱',
+  J:'超能力通过血脉传承，形成家族王朝',
+  Q:'超能力依赖一种正在迅速枯竭的稀有自然资源',
+  K:'超能力伴随一种诅咒，缓慢侵蚀使用者的身心'
+};
+
+T.power = {
+  A:['变形','身体伸缩'],
+  2:['瞬移','变色伪装'],
+  3:['神力','心灵操控'],
+  4:['自我分身','超级智慧'],
+  5:['操控伤口','超速'],
+  6:['吸收并转移动量','物质转化'],
+  7:['融合有机物','皮肤硬化'],
+  8:['引导电流','生命汲取'],
+  9:['操控天气','时间操控'],
+  10:['飞行','温度控制'],
+  J:['缩放身体','想象投影'],
+  Q:['窃取能力','与动物交谈'],
+  K:['从表中任选两项','能量射线']
+};
+
+T.front = {
+  A:['技术支持专员','名人'],
+  2:['夜班保安','私人教练'],
+  3:['记者','书店老板'],
+  4:['医学研究科学家','杂工'],
+  5:['涂鸦艺术家','小说作家'],
+  6:['博物馆档案员','销售代表'],
+  7:['地方政府官员','网红'],
+  8:['咖啡师','心理医生'],
+  9:['企业高管','学生'],
+  10:['高端艺术品经销商','律师'],
+  J:['私人厨师','高额赌注扑克玩家'],
+  Q:['夜店老板','地下拳赛推手'],
+  K:['狗仔摄影师','国际走私客']
+};
+
+T.lair = {
+  A:['一座设防的城堡废墟','一套顶层豪华公寓'],
+  2:['自家地下室里的一间密室','一所被遗忘的精神病院'],
+  3:['埋在休眠火山中的研究实验室','一座退役的水下设施'],
+  4:['一座停业的主题乐园','不起眼房屋里的隐藏阁楼'],
+  5:['餐馆后面的一间安静房间','一座废弃的电影院'],
+  6:['一座秘密末日地堡','一座工业仓库'],
+  7:['一座废弃的空管塔台','一片废弃矿井网络'],
+  8:['高端会员制俱乐部的后屋','古老密林中的伪装营地'],
+  9:['破旧咖啡馆下的地下室','修理店下的服务器机房'],
+  10:['一座改造过的旧谷仓','一间落满灰尘的闲置储物间'],
+  J:['停泊在港口的一艘改装船','废弃巴士里的简易基地'],
+  Q:['一家空荡荡的自助洗衣店','杂草丛生的后院里的隐蔽树屋'],
+  K:['一座停用的地铁站','工作坊里活动墙后的密室']
+};
+
+T.poi = {
+  A:['助手','导师'],
+  2:['手下','企业高管'],
+  3:['远亲','科学家'],
+  4:['老友','间谍'],
+  5:['同事','名人'],
+  6:['线人','流浪儿'],
+  7:['执法者','地下世界人物'],
+  8:['另一位英雄','灵能者'],
+  9:['另一位反派','宗教领袖'],
+  10:['恋人','神秘陌生人'],
+  J:['邻居','古怪发明家'],
+  Q:['记者','慈善家'],
+  K:['政府官员','阴谋论者']
+};
+
+T.mundaneGoal = {
+  A:'成为更好的自己', 2:'找到无条件的爱', 3:'磨练一门手艺', 4:'做一个好家长',
+  5:'在工作中找到成就感', 6:'完成学业', 7:'创办一份成功的事业', 8:'战胜一种疾病',
+  9:'重建一个社区', 10:'直面过去', J:'逃离社会', Q:'找到真正的朋友', K:'克服一种恐惧症'
+};
+
+T.superGoal = {
+  A:'保护一位关键人物的安全', 2:'击垮我的敌人', 3:'取回被盗之物', 4:'从囚禁中解救所爱之人',
+  5:'建立一个教派', 6:'留下一份传奇', 7:'揭开一个巨大的秘密', 8:'征服时间',
+  9:'应验一则预言', 10:'改换阵营', J:'找到一件强大的圣物', Q:'复仇', K:'拯救地球'
+};
+
+T.relationship = {
+  A:'昔日恋人', 2:'童年玩伴', 3:'同事', 4:'同一门派的弟子', 5:'一生的对手',
+  6:'同一场浩劫的受害者', 7:'同一俱乐部的成员', 8:'来自同一颗星球', 9:'初战之前素不相识',
+  10:'一同流亡', J:'同一家族', Q:'师出同门', K:'昔日盟友'
+};
+
+T.feeling = {
+  A:['爱','好奇'], 2:['恨','敬畏'], 3:['怜悯','保护欲'], 4:['较劲','骄傲'],
+  5:['钦佩','宽慰'], 6:['友情','厌恶'], 7:['执念','恐惧'], 8:['排斥','困惑'],
+  9:['悔恨','共谋感'], 10:['嫉妒','猜疑'], J:['愤怒','脆弱'], Q:['同情','启发'],
+  K:['思念','轻蔑']
+};
+
+T.mood = {
+  A:['被背叛','共情'], 2:['混乱','忧郁'], 3:['孤独','嫉妒'], 4:['多疑','愉悦'],
+  5:['困惑','自负'], 6:['满足','惊讶'], 7:['浪漫','怀旧'], 8:['无聊','焦虑'],
+  9:['复仇心切','迷茫'], 10:['干劲十足','空虚'], J:['羞愧','狂躁'], Q:['恐惧','尴尬'],
+  K:['冷漠','释然']
+};
+
+T.starter = {
+  A:'你有没有想过换边站？', 2:'你会怀念从前的生活吗？', 3:'关于我们，你最喜欢的回忆是什么？',
+  4:'你希望这个世界变成什么样？', 5:'你怎么看这个世界的现状？', 6:'如果你有我的能力，你会做什么？',
+  7:'谁是你的榜样？', 8:'你遇到过最好／最糟的事是什么？', 9:'最近你对自己的能力有什么新发现？',
+  10:'你这周感觉怎么样？', J:'你还相信你曾经相信的那些东西吗？', Q:'你上一次感到害怕是什么时候？',
+  K:'你有没有觉得，我们不属于这里？'
+};
+
+/* 事件表：t=标题，p=四条提示 {x:正文, fx:[效果选项]}
+   效果 op：scar+ scar- risk+ risk- prog+ prog- poi+ poi- goal+ mood+
+            front- power+ power- name- retire2                        */
+
+T.daily = {
+  A:{t:'家庭羁绊', p:[
+    {x:'日常生活与超能力生活之间的平衡正在你的家庭中引发紧张。你的家人对你的超能力生活知道多少？'},
+    {x:'你和一位家人之间爆发了冲突。你们在争执什么？'},
+    {x:'随着冲突加深，你感到家庭的纽带开始松脱。你觉得错在你吗？'},
+    {x:'家人抛弃了你。你做了什么导致了这一切？', fx:[{op:'goal+',arg:'与家人和解',label:'获得目标“与家人和解”'},{op:'scar+',label:'获得一道伤痕'}]}
+  ]},
+  2:{t:'现实的挑战', p:[
+    {x:'你有时会怀疑现实。这最初是怎么开始的？'},
+    {x:'解离发作变得更频繁了。你上一次解离时发生了什么？', fx:[{op:'mood+',label:'抽一张牌，换一个本周情绪'}]},
+    {x:'一个反复出现的梦开始剥夺你的理性。哪些界线已经模糊了？', fx:[{op:'scar+',label:'获得一道伤痕'}]},
+    {x:'有什么把你从精神崩溃的边缘拉了回来。那是谁，或者是什么？', fx:[{op:'poi+',label:'获得一位关键人物'},{op:'scar-',label:'治愈一道伤痕'}]}
+  ]},
+  3:{t:'陌生人', p:[
+    {x:'你听到敲门声，开门却没人。这敲门声哪里不对劲？'},
+    {x:'你收到一封匿名信，里面是你的照片。照片拍的是什么？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'这周你感觉有人在跟踪你。你觉得是谁？'},
+    {x:'有人威胁要揭露你的秘密身份，他们为什么这么做？', fx:[{op:'goal+',arg:'解决陌生人',label:'获得目标“解决陌生人”'},{op:'risk+',label:'风险值 +1'}]}
+  ]},
+  4:{t:'安静的时刻', p:[
+    {x:'一位陌生人的善举几乎让你落泪。他们为你做了什么？'},
+    {x:'有人对你说了一句你永远不会忘记的话。那是什么？'},
+    {x:'你开始在观察路人中找到点点滴滴的快乐。这周你目睹了什么温柔的人间片刻？', fx:[{op:'scar-',label:'移除一道伤痕'}]},
+    {x:'你为一项人道事业做志愿者。是什么驱使你去利他？', fx:[{op:'risk-',label:'风险值 −1'}]}
+  ]},
+  5:{t:'新的联结', p:[
+    {x:'你与一个新认识的人产生了联结，那是谁？', fx:[{op:'poi+',label:'获得一位新的关键人物'}]},
+    {x:'你带着一个难题去找一位关键人物。他们给了你什么建议？'},
+    {x:'你对一位关键人物燃起了爱火。你如何表白？对方是否有同样的感觉？'},
+    {x:'一位关键人物不得不离开你。明知可能再也见不到，你对他们说了什么？', fx:[{op:'poi-',label:'失去一位关键人物'}]}
+  ]},
+  6:{t:'创作的火花', p:[
+    {x:'你最近对一项新爱好产生了兴趣。是谁把它介绍给你的？', fx:[{op:'poi+',label:'获得一位新的关键人物'}]},
+    {x:'你把一天又一天的时间都投入了新爱好，它正变成一种痴迷。你因此忽略了哪些职责？', fx:[{op:'risk-',label:'风险值 −1'}]},
+    {x:'作为超能力者的责任压在你身上。你是什么时候意识到自己没时间搞爱好的？'},
+    {x:'尽管它带给你快乐，是时候放下这个爱好了。沉浸其中的时光，你最怀念的是什么？'}
+  ]},
+  7:{t:'梦', p:[
+    {x:'一个怪梦在这周余下的日子里一直缠着你。你觉得梦里藏着什么讯息？'},
+    {x:'你又做了那个梦，但这次有些地方不对。这次的梦有什么不同？'},
+    {x:'这个梦已经连续出现了好几天，一次比一次清晰。你现在从梦中看到了什么真相？', fx:[{op:'risk-',label:'风险值 −1'}]},
+    {x:'你开始在现实中看到梦里的图案和征兆。这个梦驱使你做了什么？', fx:[{op:'risk+',label:'风险值 +1'}]}
+  ]},
+  8:{t:'模糊', p:[
+    {x:'每一天都与前一天融在一起，仿佛时间在重复。什么微小的兴奋打破了这种单调？'},
+    {x:'这周还是一样。就连有趣的时刻也开始显得平淡无奇。你如何试图摆脱这种感觉？'},
+    {x:'你开始感到内心的空虚在滋长。世界似乎褪去了颜色。你的正念练习在对抗这种感觉上有多大效果？'},
+    {x:'一场毁灭性的抑郁攫住了你。为什么给宿敌写信成了你仅剩的唯一乐趣？', fx:[{op:'scar+',label:'获得一道伤痕'}]}
+  ]},
+  9:{t:'意外的朋友', p:[
+    {x:'你发现自己和一个经常打交道的人有共同兴趣。你们聊些什么？', fx:[{op:'poi+',label:'获得一位新的关键人物'}]},
+    {x:'你开始定期和一个社交圈聚会。这个圈子哪里显得奇怪？'},
+    {x:'你在媒体上看到了你的朋友。这种呈现有什么让你震惊的地方？'},
+    {x:'尽管你的朋友身上笼罩着神秘的气息，你还是在他们身上找到了难得的亲近感。你忽略了对他们的哪种直觉？'}
+  ]},
+  10:{t:'临界点', p:[
+    {x:'与你掩护身份相关的恼人问题开始出现。你为什么不立刻处理？'},
+    {x:'拖延未决的问题让你的掩护身份变得令人不快。你开始动摇。当初是什么让你走上这条路的？'},
+    {x:'掩护身份带来的压力开始影响你生活的其他方面。这个身份曾经让你热爱、如今却让你厌恶的是什么？', fx:[{op:'prog-',label:'擦除一个目标的1点进度'}]},
+    {x:'你的掩护身份到了临界点。哪件事成了压垮你、让你另谋出路的最后一根稻草？', fx:[{op:'front-',label:'失去掩护身份，抽牌重取'}]}
+  ]},
+  J:{t:'成瘾', p:[
+    {x:'你开始在某种恶习中找到宣泄。它帮你忘记了哪段痛苦的记忆？'},
+    {x:'一位关键人物对你初露端倪的成瘾表示了担忧。', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'沉溺于恶习的冲动越来越强。是什么牵绊让你没有屈服？'},
+    {x:'生活把你带到了岔路口。是什么促成了你的决定？', fx:[{op:'scar+',label:'获得一道伤痕'},{op:'goal+',arg:'戒除',label:'获得目标“戒除”'}]}
+  ]},
+  Q:{t:'动物', p:[
+    {x:'你发现一只无助的、需要照料的动物。内心的什么理由让你没有出手？'},
+    {x:'不知怎的，你又遇见了那只无助的动物，它奄奄一息。这次你为什么只是停下来观望？'},
+    {x:'尽管你已下定决心，这只动物的困境还是触动了你。在你伸出援手时，还残留着怎样的犹豫？'},
+    {x:'你尽力去救它，但醒来时发现它已经没了反应。你内心深处为何早就知道会是这个结局？', fx:[{op:'scar+',label:'获得一道伤痕'}]}
+  ]},
+  K:{t:'变化', p:[
+    {x:'你开始注意到身体发生了某种损害性的变化。你觉得这会怎样影响你的日常生活？'},
+    {x:'身体的变化开始恶化。是谁说服你去寻求帮助？'},
+    {x:'人们开始注意到这种变化的外在表现。曾经轻而易举的事，现在什么变得困难了？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'这种变化开始吞噬你的身体。它的什么迹象告诉你时间不多了？', fx:[{op:'retire2',label:'2个回合后退场'}]}
+  ]}
+};
+
+T.super = {
+  A:{t:'入侵者', p:[
+    {x:'你发现证据表明有不速之客潜入了你的据点。是什么证据泄露了这一点？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'你注意到据点里有重要的东西不见了。看来入侵者偷走了什么。他们拿走了什么？'},
+    {x:'尽管你努力防范，闯入事件却越来越多，丢失的东西也越来越多。你觉得自己为什么成了目标？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'最后一次闯入发生了。但这一次，你当场抓住了作案者。你如何处置他们？', fx:[{op:'scar+',label:'获得一道伤痕'}]}
+  ]},
+  2:{t:'死里逃生', p:[
+    {x:'你今天差点死掉。为了保命，你不得不做出什么艰难的决定？', fx:[{op:'scar+',label:'获得一道伤痕'}]},
+    {x:'最近与死亡擦肩而过，让新的情绪浮上心头。濒死之后，你的哪种看法改变了？'},
+    {x:'濒死经历之后，一种新的恐惧滋生了。是什么让你意识到这种恐惧？'},
+    {x:'一位关键人物帮你走出了恐惧。他们是如何帮你度过的？', fx:[{op:'scar-',label:'移除一道伤痕'}]}
+  ]},
+  3:{t:'模仿者', p:[
+    {x:'有人被目击在公共场合顶着你的形象行事。如今什么事件被算到了你的名下？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'尽管你努力查找模仿者的身份，他们仍是个谜。他们的所作所为是阻碍还是推进了你的目标？', fx:[{op:'prog+',label:'标记1点进度'},{op:'prog-',label:'擦除1点进度'}]},
+    {x:'你查明了模仿者的身份。揭开面具的这一刻，什么让你意外？', fx:[{op:'poi+',label:'获得一位新的关键人物'},{op:'risk+',label:'风险值 +1'}]},
+    {x:'模仿者的闹剧已经持续得够久了。你怎么处置他们？', fx:[{op:'poi-',label:'失去一位关键人物'},{op:'risk+',label:'风险值 +1'}]}
+  ]},
+  4:{t:'罪疚', p:[
+    {x:'这周，无辜的人因你的行动而丧生。发生了什么？', fx:[{op:'scar+',label:'获得一道伤痕'},{op:'risk+',label:'风险值 +1'}]},
+    {x:'你的脑海一遍遍回放自己的错误，无法入睡。你沉溺于什么恶习来减轻罪疚的重量？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'你看到了某样让你想起那件事的东西，那是什么？'},
+    {x:'在紧要关头，闪回让你僵在原地。这导致了什么灾难？', fx:[{op:'scar+',label:'获得一道伤痕'}]}
+  ]},
+  5:{t:'决裂', p:[
+    {x:'一位关键人物带着对你所作所为的疑虑来找你。你如何安抚他们？'},
+    {x:'你注意到一位关键人物在你身边的举止变了。哪些蛛丝马迹表明出了问题？'},
+    {x:'最近一次计划出岔子，是因为一位关键人物。关于自己的参与，他们撒了什么谎？', fx:[{op:'prog-',label:'擦除一个目标的1点进度'}]},
+    {x:'你撞见一位关键人物正在匆忙收拾行李准备离开。你如何处置他们？', fx:[{op:'poi-',label:'失去一位关键人物'}]}
+  ]},
+  6:{t:'实验', p:[
+    {x:'一个不法组织制服了你，并在你身上做实验。当你在据点醒来时，你有什么不同了？', fx:[{op:'power+',label:'抽牌获得一项超能力'}]},
+    {x:'实验之后你注意到了奇怪的副作用。它开始妨碍你的能力。你向谁求助？'},
+    {x:'你的身体似乎在排斥自己。当你意识到某项能力消失时，你正处于什么处境？', fx:[{op:'power-',label:'失去一项超能力'}]},
+    {x:'你的能力之源仿佛已经熄灭。对于变成一个普通人，你有什么感受？', fx:[{op:'power-',label:'失去一项超能力'}]}
+  ]},
+  7:{t:'世界', p:[
+    {x:'你感到空气中有了变化。你注意到周围的世界哪里不同了？'},
+    {x:'你感到有大事将要发生。你如何利用这种预感为自己谋利？', fx:[{op:'prog+',label:'为一个目标标记1点进度'}]},
+    {x:'一场全球规模的事件改变了世界的格局。你在其中扮演了什么角色？', fx:[{op:'scar+',label:'获得一道伤痕'}]},
+    {x:'世界已经永远改变了。你怀念旧世界的什么？', fx:[{op:'world+',label:'抽牌查世界表'}]}
+  ]},
+  8:{t:'绑架', p:[
+    {x:'有人掳走了一位关键人物，并把勒索信送到了你的据点。他们要求什么？', fx:[{op:'poi-',label:'失去一位关键人物'}]},
+    {x:'你制定了一个营救计划。这个计划最大的风险是什么？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'准备就绪后，你执行了计划，却出了岔子。你忽略了什么？'},
+    {x:'尽管你尽了全力，还是没能救下那位关键人物。你为什么责怪自己？', fx:[{op:'scar+',label:'获得一道伤痕'}]}
+  ]},
+  9:{t:'凯旋', p:[
+    {x:'你完美地完成了一个计划，一切都朝着对你有利的方向发展。什么挥之不去的疑虑让你无法尽情享受？', fx:[{op:'prog+',label:'为一个目标标记1点进度'}]},
+    {x:'你的疑虑得到了印证，胜利带来了意料之外的后果。关于这个失误，你试图隐瞒什么？'},
+    {x:'事态失控，一个心怀恶意的团体开始追捕你。你为什么无法让他们相信这不是你的错？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'一位陌生人突然现身帮你解围。他们为什么帮你？', fx:[{op:'poi+',label:'获得一位新的关键人物'},{op:'risk-',label:'风险值 −1'}]}
+  ]},
+  10:{t:'断片', p:[
+    {x:'在一个紧张时刻，你丢失了一段记忆。为什么你觉得这不是第一次？', fx:[{op:'name-',label:'擦除你的名字'}]},
+    {x:'一个陌生的关键人物来找你，讲述你们之间的关系。他们自称是谁，你为什么相信？', fx:[{op:'poi+',label:'获得一位新的关键人物'}]},
+    {x:'片刻的失忆变成了长达数小时的断片。你最害怕失去哪些记忆？', fx:[{op:'scar+',label:'获得一道伤痕'}]},
+    {x:'你从一次断片中醒来，浑身是血。眼前是怎样一幅可怕的景象？', fx:[{op:'poi-',label:'失去一位关键人物'}]}
+  ]},
+  J:{t:'自负', p:[
+    {x:'超能力者与凡人之间的差异变得格外醒目。你是什么时候认定自己比所有人都优越的？'},
+    {x:'你开始把凡人看作不过是动物。这如何改变了你对待他们的方式？'},
+    {x:'你不再觉得日常生活有什么意义。你最先放弃哪些义务？', fx:[{op:'frontgoal-',label:'失去掩护身份与日常目标'}]},
+    {x:'凡人的生活如今显得毫无意义。你会如何引领他们走向更伟大的目标？', fx:[{op:'goal+',arg:'成为神',label:'获得目标“成为神”'}]}
+  ]},
+  Q:{t:'学徒', p:[
+    {x:'有人来找你，想要协助你的事业。是什么让你决定收他们为徒？', fx:[{op:'poi+',label:'获得一位新的关键人物'}]},
+    {x:'你的学徒在你的指导下勤奋工作。他们向你讲述了自己过去的什么故事？', fx:[{op:'prog+',label:'为一个目标标记1点进度'}]},
+    {x:'在共事的时光里，你的学徒成了你的挚友。他们的陪伴中，你最享受的是什么？'},
+    {x:'你意识到自己对学徒产生了某种形式的爱。你在他们身上看到了什么，让你想起年轻时的自己？', fx:[{op:'scar-',label:'移除一道伤痕'}]}
+  ]},
+  K:{t:'运动', p:[
+    {x:'你看到相当多的人穿着你超能力形象的服装。你为什么觉得这会带来麻烦？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'你的影响力无意中催生了一场运动。它的核心价值观中，什么让你意外？', fx:[{op:'risk+',label:'风险值 +1'}]},
+    {x:'运动的人数不断壮大，人们期望你来领导他们。你如何利用他们的影响力推进自己的议程？', fx:[{op:'prog+',label:'为一个目标标记1点进度'}]},
+    {x:'这场运动实施了他们的宏大计划，世界已被不可逆转地改变。世人从此会因什么永远记住你？'}
+  ]}
+};
+
+/* 表的元信息：用于“查表”页与速查卡 */
+const TABLE_META = [
+  {key:'world',      name:'这个世界是什么样的？', dual:true,  data:T.world},
+  {key:'powerRule',  name:'超能力是如何运作的？', dual:false, data:T.powerRule},
+  {key:'power',      name:'超能力',             dual:true,  data:T.power},
+  {key:'front',      name:'掩护身份',           dual:true,  data:T.front},
+  {key:'lair',       name:'据点',               dual:true,  data:T.lair},
+  {key:'poi',        name:'关键人物',           dual:true,  data:T.poi},
+  {key:'mundaneGoal',name:'日常目标',           dual:false, data:T.mundaneGoal},
+  {key:'superGoal',  name:'超能力目标',         dual:false, data:T.superGoal},
+  {key:'relationship',name:'关系',              dual:false, data:T.relationship},
+  {key:'feeling',    name:'隐藏情感',           dual:true,  data:T.feeling},
+  {key:'mood',       name:'本周情绪',           dual:true,  data:T.mood},
+  {key:'starter',    name:'话题引子',           dual:false, data:T.starter}
+];
+
+/* 信纸主题：canvas 导出与网页预览共用 */
+const PAPERS = [
+  {id:'aged',    name:'陈年信纸', bg:'#ece2cd', ink:'#33291d', accent:'#8e1f28', rule:'none',  font:'serif', deco:'stain'},
+  {id:'ruled',   name:'横线笔记', bg:'#f3f0e6', ink:'#26303a', accent:'#3c5a72', rule:'lines', font:'serif', deco:'margin'},
+  {id:'night',   name:'暗夜黑笺', bg:'#181a1d', ink:'#ded6c6', accent:'#a8303a', rule:'none',  font:'serif', deco:'edge'},
+  {id:'telex',   name:'电报打字稿',bg:'#e8e6de', ink:'#2b2b28', accent:'#6b6a62', rule:'none',  font:'mono',  deco:'perf'},
+  {id:'official',name:'官方公函', bg:'#fbfaf7', ink:'#1d2530', accent:'#1d3f6e', rule:'none',  font:'sans',  deco:'seal'},
+  {id:'grid',    name:'方格稿纸', bg:'#f6f3ea', ink:'#2f3327', accent:'#5d6b4a', rule:'grid',  font:'serif', deco:'none'},
+  {id:'press',   name:'报纸讣闻', bg:'#e9e6dc', ink:'#1b1b1a', accent:'#1b1b1a', rule:'none',  font:'serif', deco:'masthead'}
+];
+
+/* ==========================================================================
+   荣光之影 · 牌桌 — 离线辅助工具
+   ========================================================================== */
+
+const SUITS = [
+  {s:'♠', c:'black', n:'黑桃'},
+  {s:'♥', c:'red',   n:'红桃'},
+  {s:'♦', c:'red',   n:'方块'},
+  {s:'♣', c:'black', n:'梅花'}
+];
+const KEY = 'shadow-of-glory/v1';
+
+/* ---------- 存档 ---------- */
+let memoryFallback = null;
+let storageWorks = true;
+const store = {
+  read(){
+    try{ const v = localStorage.getItem(KEY); return v; }
+    catch(e){ storageWorks = false; return memoryFallback; }
+  },
+  write(v){
+    memoryFallback = v;
+    try{ localStorage.setItem(KEY, v); }
+    catch(e){ storageWorks = false; }
+  }
+};
+
+function freshState(){
+  return {
+    v:1, phase:'create', week:1,
+    fmt:{medium:'短信', length:'一两百字'},
+    world:null, powerRule:null, relationship:null, side:null,
+    me:{hero:'', civil:'', look:'', powers:[], front:'', lair:'',
+        pois:[], goals:[], scars:[], risk:0, feeling:'', feelingShown:false},
+    foe:{name:'', scarIGave:''},
+    deck:[], discard:[], hand:[],
+    seen:{daily:{}, super:{}},
+    current:{mood:null, daily:null, sup:null, advanced:false},
+    weeklog:[], letters:[],
+    draft:{to:'', from:'', paper:'aged', kind:'first', body:''}, notes:'',
+    retired:null, retireCountdown:null, deckEmpty:false
+  };
+}
+
+let S = freshState();
+let tab = 'setup';
+
+function save(){ store.write(JSON.stringify(S)); }
+function load(){
+  const raw = store.read();
+  if(!raw) return false;
+  try{
+    const o = JSON.parse(raw);
+    if(o && o.v === 1){ S = Object.assign(freshState(), o); return true; }
+  }catch(e){}
+  return false;
+}
+
+/* ---------- 小工具 ---------- */
+const $ = sel => document.querySelector(sel);
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function toast(msg){
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2200);
+}
+function bold(t){ return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'); }
+
+/* ---------- 牌堆 ---------- */
+function buildDeck(){
+  const d = [];
+  for(const su of SUITS) for(const r of RANKS) d.push({r, s:su.s, c:su.c});
+  d.push({r:'王', s:'★', c:'joker'});
+  d.push({r:'王', s:'☆', c:'joker'});
+  return shuffle(d);
+}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function ensureDeck(){ if(!S.deck.length && !S.discard.length && !S.hand.length) S.deck = buildDeck(); }
+function drawCard(){
+  ensureDeck();
+  if(!S.deck.length){ S.deckEmpty = true; checkRetire(); return null; }
+  const c = S.deck.pop();
+  S.discard.push(c);
+  if(!S.deck.length){ S.deckEmpty = true; checkRetire(); }
+  return c;
+}
+function reshuffleAll(){
+  S.deck = shuffle(S.deck.concat(S.discard, S.hand));
+  S.discard = []; S.hand = []; S.deckEmpty = false;
+  save(); render(); toast('牌堆已重洗');
+}
+function cardLabel(c){ return c ? (c.c==='joker' ? '鬼牌' : c.s + c.r) : '—'; }
+function isRed(c){ return c && c.c === 'red'; }
+
+function cardHTML(c, cls){
+  if(!c) return '';
+  const k = ['cardface', c.c==='red'?'red':'', c.c==='joker'?'joker':'', cls||''].join(' ');
+  if(c.c === 'joker')
+    return `<div class="${k}"><div class="ix tl"><span class="r">王</span></div>
+      <div class="center">JOKER</div><div class="ix br"><span class="r">王</span></div></div>`;
+  return `<div class="${k}">
+    <div class="ix tl"><span class="r">${c.r}</span><span class="s">${c.s}</span></div>
+    <div class="center">${c.s}</div>
+    <div class="ix br"><span class="r">${c.r}</span><span class="s">${c.s}</span></div></div>`;
+}
+function dealHTML(c){ return `<div class="flipwrap">${cardHTML(c)}</div>`; }
+
+/* 查表：dual 表按红黑取值 */
+function lookup(key, c){
+  const meta = TABLE_META.find(m=>m.key===key);
+  const data = meta ? meta.data : (key==='daily'?T.daily:T.super);
+  if(meta) return meta.dual ? data[c.r][isRed(c)?1:0] : data[c.r];
+  return null;
+}
+
+/* ---------- 退场判定 ---------- */
+function retireReason(){
+  if(S.me.scars.length >= 4) return '伤痕累积到 4 道，角色被创伤压垮。';
+  if(S.me.risk >= 4) return '风险值达到 4，秘密身份暴露。';
+  if(S.me.goals.length && S.me.goals.every(g=>g.filled>=g.boxes)) return '所有目标均已完成，角色失去方向。';
+  if(S.deckEmpty) return '牌堆用尽，太多时间过去，角色已苍老疲惫。';
+  if(S.retireCountdown === 0) return '提示指定的倒计时已到。';
+  return null;
+}
+function checkRetire(){
+  if(S.retired) return;
+  const r = retireReason();
+  if(r){ S.retired = {reason:r, week:S.week}; save(); }
+}
+
+/* ---------- 弹层 ---------- */
+function modal(title, inner, foot){
+  closeModal();
+  const host = $('#modalhost');
+  host.innerHTML = `<div class="modal" data-act="modalbg"><div class="box">
+    <h3>${esc(title)}</h3>${inner}
+    <div class="row" style="margin-top:16px">${foot||'<button class="btn ghost" data-act="closemodal">关闭</button>'}</div>
+  </div></div>`;
+  bind(host);
+}
+function closeModal(){ $('#modalhost').innerHTML = ''; }
+
+/* 从一张表里手动挑选 */
+function pickFromTable(key, cb){
+  const meta = TABLE_META.find(m=>m.key===key);
+  let html = '<div class="pickgrid">';
+  for(const r of RANKS){
+    if(meta.dual){
+      html += `<button data-pick="${esc(meta.data[r][0])}">${r} ♠ ${esc(meta.data[r][0])}</button>`;
+      html += `<button data-pick="${esc(meta.data[r][1])}" style="color:var(--crimson-lit)">${r} ♥ ${esc(meta.data[r][1])}</button>`;
+    }else{
+      html += `<button data-pick="${esc(meta.data[r])}">${r} · ${esc(meta.data[r])}</button>`;
+    }
+  }
+  html += '</div>';
+  modal('从「'+meta.name+'」中挑选', html);
+  $('#modalhost').querySelectorAll('[data-pick]').forEach(b=>{
+    b.onclick = () => { closeModal(); cb(b.getAttribute('data-pick')); };
+  });
+}
+
+/* ---------- 事件绑定 ---------- */
+const ACT = {};
+function bind(root){
+  root.querySelectorAll('[data-act]').forEach(el=>{
+    if(el.__bound) return; el.__bound = true;
+    const ev = (el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT')
+      ? (el.type==='checkbox'||el.tagName==='SELECT' ? 'change' : 'input') : 'click';
+    el.addEventListener(ev, e => {
+      const fn = ACT[el.getAttribute('data-act')];
+      if(fn){ fn(el, e); }
+    });
+  });
+}
+
+/* ---------- 导航 ---------- */
+const TABS = [
+  {id:'setup',  n:'开局',  suit:'♠', r:0},
+  {id:'char',   n:'角色',  suit:'♥', r:1},
+  {id:'turn',   n:'本周',  suit:'♦', r:1},
+  {id:'write',  n:'写信',  suit:'♣', r:0},
+  {id:'mail',   n:'信箱',  suit:'♠', r:0},
+  {id:'tables', n:'查表',  suit:'♥', r:1},
+  {id:'cards',  n:'牌与打印', suit:'♦', r:1},
+  {id:'about',  n:'规则与存档', suit:'♣', r:0}
+];
+ACT.tab = el => { tab = el.getAttribute('data-arg'); render(); window.scrollTo(0,0); };
+
+function renderNav(){
+  $('#nav').innerHTML = TABS.map(t=>
+    `<button data-act="tab" data-arg="${t.id}" aria-current="${tab===t.id}">
+      <span class="suit${t.r?" r":""}">${t.suit}</span>${t.n}</button>`).join('');
+  bind($('#nav'));
+}
+
+function renderStatus(){
+  const m = S.me;
+  const pips = (n, max, warn) => Array.from({length:max}, (_,i)=>
+    `<i class="pip ${i<n?(warn?'warn':'on'):''}"></i>`).join('');
+  $('#statusbar').innerHTML = `
+    <span class="stat">第 <b>${S.week}</b> 周</span>
+    <span class="stat">伤痕 <span class="pips">${pips(m.scars.length,4)}</span> <b>${m.scars.length}</b>/4</span>
+    <span class="stat">风险 <span class="pips">${pips(m.risk,4,true)}</span> <b>${m.risk}</b>/4</span>
+    <span class="stat">牌堆 <b>${S.deck.length}</b> 张</span>
+    ${S.side?`<span class="stat">身份 <b>${S.side}</b></span>`:''}
+    <span class="spacer"></span>
+    ${S.retired?'<span class="tag red">已退场</span>':''}
+    <button class="btn tiny ghost" data-act="quicksave">保存</button>`;
+  bind($('#statusbar'));
+}
+ACT.quicksave = () => { save(); toast(storageWorks?'已保存到本机浏览器':'浏览器存储不可用，请用「导出存档」'); };
+
+/* ==========================================================================
+   面板 1 · 开局
+   ========================================================================== */
+function panelSetup(){
+  const w = S.world, pr = S.powerRule, rel = S.relationship;
+  return `
+  <div class="sheet">
+    <h2>开局<span class="sub">一款关于英雄与反派的双人书信游戏</span></h2>
+    <p class="lede">《荣光之影》讲的是犯错与承受愧疚、宽恕与悲剧。开始之前，和你的搭档说清楚哪些话题不希望出现在游戏里；如果某条提示触到了它们，直接弃掉重抽。任何时候感到过于不适，就停下来。</p>
+    <div class="notice"><b>内容警告：</b>本游戏的提示涉及死亡、抑郁、成瘾、绑架、道德沦丧、背叛、精神与身体疾病、暴力、解离与孤立。</div>
+
+    <h3 class="mini">这个世界是什么样的？</h3>
+    <div class="draw">
+      ${w ? dealHTML(w.card) : '<div class="flipwrap"><div class="cardface back"></div></div>'}
+      <div class="result">
+        <div class="headline">${w ? esc(w.text) : '尚未确立'}</div>
+        <p class="body small muted">翻开牌堆顶一张牌确立世界前提。可以和搭档一起把细节讨论清楚，再写进下面的备注。</p>
+        <div class="row">
+          <button class="btn" data-act="drawWorld">${w?'重抽':'翻牌确立'}</button>
+          <button class="btn ghost" data-act="pickWorld">直接挑选</button>
+        </div>
+        ${w?`<label class="field" style="margin-top:12px"><span>世界备注</span>
+          <textarea rows="2" data-act="setWorldNote" placeholder="你们讨论出的细节">${esc(w.note||'')}</textarea></label>`:''}
+      </div>
+    </div>
+
+    <h3 class="mini">超能力是如何运作的？</h3>
+    <div class="draw">
+      ${pr ? dealHTML(pr.card) : '<div class="flipwrap"><div class="cardface back"></div></div>'}
+      <div class="result">
+        <div class="headline">${pr ? esc(pr.text) : '尚未确立'}</div>
+        <p class="body small muted">这条规则会给英雄与反派的经历添一层底色。</p>
+        <div class="row">
+          <button class="btn" data-act="drawRule">${pr?'重抽':'翻牌确立'}</button>
+          <button class="btn ghost" data-act="pickRule">直接挑选</button>
+        </div>
+        ${pr?`<label class="field" style="margin-top:12px"><span>运作备注</span>
+          <textarea rows="2" data-act="setRuleNote" placeholder="你们讨论出的细节">${esc(pr.note||'')}</textarea></label>`:''}
+      </div>
+    </div>
+
+    <h3 class="mini">格式与节奏</h3>
+    <div class="grid2">
+      <label class="field"><span>用什么写信</span>
+        <input type="text" data-act="setMedium" value="${esc(S.fmt.medium)}" placeholder="纸笔 / 邮件 / 短信 / 语音"></label>
+      <label class="field"><span>每封信大致长度</span>
+        <input type="text" data-act="setLength" value="${esc(S.fmt.length)}" placeholder="几句话 / 一两百字 / 一页"></label>
+    </div>
+    <p class="small muted">两边都尽量守住这个长度，体验才公平。也可以现在就商定游戏时长，或者一直玩到某位角色退场。</p>
+
+    <h3 class="mini">你们之间的关系</h3>
+    <div class="draw">
+      ${rel ? dealHTML(rel.card) : '<div class="flipwrap"><div class="cardface back"></div></div>'}
+      <div class="result">
+        <div class="headline">${rel ? esc(rel.text) : '尚未确立'}</div>
+        <p class="body small muted">两位玩家的角色都定下来之后，由其中一人翻牌确立你们最初是如何相识的。两人共用这一个结果。</p>
+        <div class="row">
+          <button class="btn" data-act="drawRel">${rel?'重抽':'翻牌确立'}</button>
+          <button class="btn ghost" data-act="pickRel">直接挑选</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function setSimple(field, key, tableKey, useCard){
+  const c = useCard ? drawCard() : null;
+  if(useCard && !c){ toast('牌堆空了'); return; }
+  if(useCard && c.c==='joker'){
+    pickFromTable(tableKey, txt => { S[field] = {card:c, text:txt, note:(S[field]||{}).note||''}; save(); render(); });
+    return;
+  }
+  S[field] = {card:c, text: c ? lookup(tableKey,c) : '', note:(S[field]||{}).note||''};
+  save(); render();
+}
+ACT.drawWorld = () => setSimple('world','world','world',true);
+ACT.drawRule  = () => setSimple('powerRule','powerRule','powerRule',true);
+ACT.drawRel   = () => setSimple('relationship','relationship','relationship',true);
+ACT.pickWorld = () => pickFromTable('world', t => { S.world = {card:null,text:t,note:(S.world||{}).note||''}; save(); render(); });
+ACT.pickRule  = () => pickFromTable('powerRule', t => { S.powerRule = {card:null,text:t,note:(S.powerRule||{}).note||''}; save(); render(); });
+ACT.pickRel   = () => pickFromTable('relationship', t => { S.relationship = {card:null,text:t}; save(); render(); });
+ACT.setWorldNote = el => { S.world.note = el.value; save(); };
+ACT.setRuleNote  = el => { S.powerRule.note = el.value; save(); };
+ACT.setMedium = el => { S.fmt.medium = el.value; save(); };
+ACT.setLength = el => { S.fmt.length = el.value; save(); };
+
+/* ==========================================================================
+   面板 2 · 角色
+   ========================================================================== */
+const ASSIGN = [
+  {key:'power', label:'超能力',   table:'power',       get:()=>S.me.powers.join(' / ')},
+  {key:'front', label:'掩护身份', table:'front',       get:()=>S.me.front},
+  {key:'lair',  label:'据点',     table:'lair',        get:()=>S.me.lair},
+  {key:'poi',   label:'关键人物', table:'poi',         get:()=>S.me.pois.map(p=>p.role+(p.name?`（${p.name}）`:'')).join('、')},
+  {key:'mg',    label:'日常目标', table:'mundaneGoal', get:()=>(S.me.goals.find(g=>g.kind==='日常')||{}).text||''},
+  {key:'sg',    label:'超能力目标',table:'superGoal',  get:()=>(S.me.goals.find(g=>g.kind==='超能力')||{}).text||''},
+  {key:'feel',  label:'隐藏情感', table:'feeling',     get:()=>S.me.feeling}
+];
+
+function applyAssign(key, text){
+  const m = S.me;
+  if(key==='power'){ m.powers = [text]; }
+  if(key==='front'){ m.front = text; }
+  if(key==='lair'){ m.lair = text; }
+  if(key==='poi'){ m.pois.push({role:text, name:''}); }
+  if(key==='mg'){ const g = m.goals.find(g=>g.kind==='日常'); if(g){g.text=text;} else m.goals.push(newGoal(text,'日常')); }
+  if(key==='sg'){ const g = m.goals.find(g=>g.kind==='超能力'); if(g){g.text=text;} else m.goals.push(newGoal(text,'超能力')); }
+  if(key==='feel'){ m.feeling = text; }
+  save(); render();
+}
+function newGoal(text, kind){ return {text, kind:kind||'新', boxes:3, filled:0}; }
+
+function panelChar(){
+  const m = S.me;
+  const handCards = S.hand.map((c,i)=>
+    `<button class="btn ghost" data-act="useHand" data-arg="${i}" style="padding:0;border:0;background:none">${cardHTML(c,'sm')}</button>`).join('');
+
+  const creation = S.phase==='create' ? `
+  <div class="sheet">
+    <h2>角色创建<span class="sub">半随机 · 先不定善恶</span></h2>
+    <p class="lede">先抽 8 张手牌，再用它们从表里选条目：每用一张就弃掉一张。谁是英雄、谁是反派要等到最后才揭晓——最有意思的反派怀有利他的目标，最强大的英雄则有一段黑暗的过去。</p>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn primary" data-act="dealHand">${S.hand.length?'重新发 8 张手牌':'抽 8 张手牌'}</button>
+      <span class="small muted">手牌剩 ${S.hand.length} 张</span>
+    </div>
+    ${S.hand.length?`<div class="row" style="gap:6px;margin-bottom:16px">${handCards}</div>`:''}
+    ${ASSIGN.map(a=>`
+      <div class="listline">
+        <span class="grow"><b style="color:var(--paper)">${a.label}</b>
+          <span class="muted">${esc(a.get()||'未指派')}</span></span>
+        <button class="btn tiny" data-act="assign" data-arg="${a.key}">指派手牌</button>
+        <button class="btn tiny ghost" data-act="assignPick" data-arg="${a.key}">挑选</button>
+      </div>`).join('')}
+    <h3 class="mini">伤痕：你们给彼此留下的</h3>
+    <p class="small muted">每位玩家描述一道自己的角色给对方角色造成的伤痕。讨论导致它的事件，以及它留下了什么后遗症。</p>
+    <div class="grid2">
+      <label class="field"><span>对方给我留下的伤痕（记在我的角色卡上）</span>
+        <input type="text" data-act="firstScar" value="${esc((m.scars[0]||{}).text||'')}" placeholder="例：难民营被抛下"></label>
+      <label class="field"><span>我给对方留下的伤痕（备忘）</span>
+        <input type="text" data-act="scarIGave" value="${esc(S.foe.scarIGave)}" placeholder="例：第一次对决重伤了他"></label>
+    </div>
+    <h3 class="mini">英雄还是反派</h3>
+    <div class="draw">
+      <div class="result">
+        <div class="headline">${S.side?esc(S.side):'尚未揭晓'}</div>
+        <p class="body small muted">翻开牌堆顶一张牌：黑色牌意味着你是英雄，否则就是反派。另一位玩家承担剩下的那个角色。</p>
+        <div class="row">
+          <button class="btn" data-act="drawSide">翻牌</button>
+          <button class="btn ghost" data-act="setSide" data-arg="英雄">定为英雄</button>
+          <button class="btn ghost" data-act="setSide" data-arg="反派">定为反派</button>
+        </div>
+      </div>
+    </div>
+    <div class="notice" style="margin-top:18px">
+      创建完成后，把弃牌堆与剩余手牌一起洗回牌堆，之后每周事件就用这副牌。
+      <div class="row" style="margin-top:10px"><button class="btn primary" data-act="finishCreate">完成创建，洗牌开始</button></div>
+    </div>
+  </div>` : '';
+
+  const goalsHTML = m.goals.length ? m.goals.map((g,i)=>`
+    <div class="goal ${g.filled>=g.boxes?'done':''}">
+      <span class="txt"><em>${esc(g.kind)}目标</em>${esc(g.text)}</span>
+      <span class="boxes">${Array.from({length:g.boxes},(_,b)=>
+        `<i class="${b<g.filled?'on':''}" data-act="toggleBox" data-arg="${i}:${b}"></i>`).join('')}</span>
+      <button class="btn tiny ghost" data-act="delGoal" data-arg="${i}">删除</button>
+    </div>`).join('') : '<p class="small muted">还没有目标。</p>';
+
+  const poisHTML = m.pois.length ? m.pois.map((p,i)=>`
+    <div class="listline">
+      <span class="tag">${esc(p.role)}</span>
+      <input type="text" class="grow" data-act="poiName" data-arg="${i}" value="${esc(p.name)}" placeholder="他叫什么名字？">
+      <button class="btn tiny ghost" data-act="delPoi" data-arg="${i}">失去</button>
+    </div>`).join('') : '<p class="small muted">还没有关键人物。</p>';
+
+  const scarsHTML = m.scars.length ? m.scars.map((s,i)=>`
+    <div class="listline scarline">
+      <span class="grow">${esc(s.text)}<span class="muted small"> · 第 ${s.week} 周</span></span>
+      <button class="btn tiny ghost" data-act="delScar" data-arg="${i}">愈合</button>
+    </div>`).join('') : '<p class="small muted">还没有伤痕。</p>';
+
+  return creation + `
+  <div class="dossier" style="margin-bottom:22px">
+    <div class="head">
+      <h2>${esc(m.hero||'无名者')}<small>${esc(m.civil?'日常姓名 '+m.civil:'')}</small></h2>
+      <div class="row">
+        ${S.side?`<span class="tag gold">${esc(S.side)}</span>`:''}
+        ${S.relationship?`<span class="tag">${esc(S.relationship.text)}</span>`:''}
+      </div>
+    </div>
+    <div class="body">
+      <div class="grid2">
+        <div>
+          <label class="field"><span>超能力名号</span><input type="text" data-act="setHero" value="${esc(m.hero)}" placeholder="例：闪点"></label>
+          <label class="field"><span>日常姓名</span><input type="text" data-act="setCivil" value="${esc(m.civil)}" placeholder="例：苏珊"></label>
+          <label class="field"><span>外貌与战衣</span><textarea rows="2" data-act="setLook" placeholder="天蓝色配金边，短短的白色披风">${esc(m.look)}</textarea></label>
+        </div>
+        <div>
+          <dl class="kv">
+            <dt>超能力</dt><dd>${esc(m.powers.join(' / ')||'—')}</dd>
+            <dt>掩护身份</dt><dd>${esc(m.front||'—')}</dd>
+            <dt>据点</dt><dd>${esc(m.lair||'—')}</dd>
+            <dt>隐藏情感</dt><dd>${m.feeling?(m.feelingShown?esc(m.feeling):'<span class="muted">已隐藏</span>'):'—'}
+              ${m.feeling?`<button class="btn tiny ghost" data-act="toggleFeel">${m.feelingShown?'藏起来':'看一眼'}</button>`:''}</dd>
+            <dt>对方角色</dt><dd><input type="text" data-act="setFoe" value="${esc(S.foe.name)}" placeholder="宿敌的名号"></dd>
+          </dl>
+          <p class="small muted">隐藏情感要对对方玩家保密。</p>
+        </div>
+      </div>
+
+      <h3 class="mini">目标</h3>
+      ${goalsHTML}
+      <div class="row" style="margin-top:8px">
+        <button class="btn tiny" data-act="addGoal">添加目标</button>
+        <span class="small muted">三个方框都勾掉即视为完成。被要求擦除进度时，若没有已勾的方框，就多画一个空框。</span>
+      </div>
+
+      <h3 class="mini">关键人物</h3>
+      ${poisHTML}
+      <div class="row" style="margin-top:8px">
+        <button class="btn tiny" data-act="addPoiDraw">抽牌获得</button>
+        <button class="btn tiny ghost" data-act="addPoiPick">自己写</button>
+      </div>
+
+      <h3 class="mini">伤痕与风险</h3>
+      ${scarsHTML}
+      <div class="row" style="margin-top:10px">
+        <button class="btn tiny" data-act="addScar">获得伤痕</button>
+        <span class="small muted">4 道即退场</span>
+        <span style="flex:1"></span>
+        <span class="small muted">风险值</span>
+        <button class="btn tiny" data-act="risk" data-arg="-1">−</button>
+        <b style="min-width:20px;text-align:center">${m.risk}</b>
+        <button class="btn tiny" data-act="risk" data-arg="1">＋</button>
+      </div>
+      <h3 class="mini">笔记</h3>
+      <textarea rows="3" data-act="setNotes" placeholder="世界设定、对方说过的事、想在下一封信里用的细节">${esc(S.notes||'')}</textarea>
+      ${S.retireCountdown!==null&&S.retireCountdown!==undefined?`<div class="notice danger" style="margin-top:14px">倒计时：还剩 ${S.retireCountdown} 个回合退场。</div>`:''}
+      ${S.retired?`<div class="notice danger" style="margin-top:14px"><b>已退场</b>（第 ${S.retired.week} 周）：${esc(S.retired.reason)}<br>
+        去「写信」页写一篇新闻报道，为这个故事收尾。
+        <div class="row" style="margin-top:8px"><button class="btn tiny ghost" data-act="unretire">撤销退场</button></div></div>`:''}
+    </div>
+  </div>`;
+}
+
+ACT.dealHand = () => {
+  ensureDeck();
+  S.deck = shuffle(S.deck.concat(S.discard, S.hand)); S.discard = []; S.hand = [];
+  S.hand = S.deck.splice(-8, 8); save(); render();
+};
+ACT.assign = el => {
+  const key = el.getAttribute('data-arg');
+  if(!S.hand.length){ toast('先抽 8 张手牌'); return; }
+  const a = ASSIGN.find(x=>x.key===key);
+  const meta = TABLE_META.find(m=>m.key===a.table);
+  const html = `<p class="small muted">从手牌里弃掉一张，查「${meta.name}」表。</p>
+    <div class="row" style="gap:6px">${S.hand.map((c,i)=>{
+      const v = c.c==='joker' ? '鬼牌（任选）' : (meta.dual ? meta.data[c.r][isRed(c)?1:0] : meta.data[c.r]);
+      return `<button data-idx="${i}" style="background:none;border:0;padding:0;cursor:pointer;text-align:center;width:86px">
+        ${cardHTML(c,'sm')}<div class="small" style="margin-top:4px;color:var(--mist);line-height:1.4">${esc(v)}</div></button>`;
+    }).join('')}</div>`;
+  modal('指派手牌 · '+a.label, html);
+  $('#modalhost').querySelectorAll('[data-idx]').forEach(b=>{
+    b.onclick = () => {
+      const i = +b.getAttribute('data-idx');
+      const c = S.hand.splice(i,1)[0];
+      S.discard.push(c);
+      closeModal();
+      if(c.c==='joker'){ pickFromTable(a.table, t=>applyAssign(key,t)); }
+      else applyAssign(key, meta.dual ? meta.data[c.r][isRed(c)?1:0] : meta.data[c.r]);
+    };
+  });
+};
+ACT.assignPick = el => {
+  const key = el.getAttribute('data-arg');
+  const a = ASSIGN.find(x=>x.key===key);
+  pickFromTable(a.table, t => applyAssign(key, t));
+};
+ACT.useHand = () => toast('点某一行右侧的「指派手牌」来使用它');
+ACT.firstScar = el => {
+  const v = el.value.trim();
+  if(!S.me.scars.length){ if(v) S.me.scars.push({text:v, week:S.week}); }
+  else if(v) S.me.scars[0].text = v; else S.me.scars.shift();
+  save(); renderStatus();
+};
+ACT.scarIGave = el => { S.foe.scarIGave = el.value; save(); };
+ACT.drawSide = () => {
+  const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+  S.side = (c.c==='black') ? '英雄' : (c.c==='red' ? '反派' : '由你选择');
+  save(); render();
+  toast(`翻出 ${cardLabel(c)} → ${S.side}`);
+};
+ACT.setSide = el => { S.side = el.getAttribute('data-arg'); save(); render(); };
+ACT.finishCreate = () => {
+  S.phase = 'play';
+  S.deck = shuffle(S.deck.concat(S.discard, S.hand));
+  S.discard = []; S.hand = []; S.deckEmpty = false;
+  save(); tab = 'write'; render();
+  toast('牌已洗好。去写第一封信吧。');
+};
+ACT.setHero = el => { S.me.hero = el.value; save(); };
+ACT.setCivil = el => { S.me.civil = el.value; save(); };
+ACT.setLook = el => { S.me.look = el.value; save(); };
+ACT.setFoe = el => { S.foe.name = el.value; save(); };
+ACT.toggleFeel = () => { S.me.feelingShown = !S.me.feelingShown; save(); render(); };
+ACT.toggleBox = el => {
+  const [gi, bi] = el.getAttribute('data-arg').split(':').map(Number);
+  const g = S.me.goals[gi];
+  g.filled = (bi < g.filled) ? bi : bi+1;
+  save(); checkRetire(); render();
+};
+ACT.delGoal = el => { S.me.goals.splice(+el.getAttribute('data-arg'),1); save(); render(); };
+ACT.addGoal = () => {
+  modal('添加目标', `<label class="field"><span>目标内容</span><input type="text" id="ngoal" placeholder="例：与家人和解"></label>
+    <label class="field"><span>类别</span><select id="ngkind"><option>日常</option><option>超能力</option><option>新</option></select></label>`,
+    `<button class="btn primary" id="ngok">添加</button><button class="btn ghost" data-act="closemodal">取消</button>`);
+  $('#ngok').onclick = () => {
+    const t = $('#ngoal').value.trim(); if(!t) return;
+    S.me.goals.push(newGoal(t, $('#ngkind').value)); closeModal(); save(); render();
+  };
+};
+ACT.poiName = el => { S.me.pois[+el.getAttribute('data-arg')].name = el.value; save(); };
+ACT.delPoi = el => { S.me.pois.splice(+el.getAttribute('data-arg'),1); save(); render(); };
+ACT.addPoiDraw = () => {
+  const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+  if(c.c==='joker'){ pickFromTable('poi', t=>{ S.me.pois.push({role:t,name:''}); save(); render(); }); return; }
+  S.me.pois.push({role: lookup('poi',c), name:''}); save(); render();
+  toast(`${cardLabel(c)} → ${lookup('poi',c)}`);
+};
+ACT.addPoiPick = () => pickFromTable('poi', t => { S.me.pois.push({role:t,name:''}); save(); render(); });
+ACT.addScar = () => {
+  modal('获得一道伤痕', `<label class="field"><span>用一个词或一句话提醒自己这道伤痕是什么</span>
+    <input type="text" id="nscar" placeholder="例：家人抛弃 / 烧伤疤痕"></label>`,
+    `<button class="btn primary" id="nsok">记下</button><button class="btn ghost" data-act="closemodal">取消</button>`);
+  $('#nsok').onclick = () => {
+    const t = $('#nscar').value.trim() || '说不出口的伤';
+    S.me.scars.push({text:t, week:S.week}); closeModal(); save(); checkRetire(); render();
+  };
+};
+ACT.delScar = el => { S.me.scars.splice(+el.getAttribute('data-arg'),1); save(); render(); };
+ACT.risk = el => {
+  S.me.risk = Math.max(0, S.me.risk + (+el.getAttribute('data-arg')));
+  save(); checkRetire(); render();
+};
+ACT.setNotes = el => { S.notes = el.value; save(); };
+ACT.unretire = () => { S.retired = null; S.deckEmpty = S.deck.length===0; save(); render(); };
+ACT.closemodal = closeModal;
+ACT.modalbg = (el, e) => { if(e.target === el) closeModal(); };
+
+/* ==========================================================================
+   面板 3 · 本周事件
+   ========================================================================== */
+function promptIndexFor(kind, rank){
+  const n = S.seen[kind][rank] || 0;
+  return Math.min(n, 3);
+}
+function drawEvent(kind){
+  const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+  const finish = rank => {
+    const idx = promptIndexFor(kind, rank);
+    S.seen[kind][rank] = (S.seen[kind][rank]||0) + 1;
+    const tbl = kind==='daily' ? T.daily : T.super;
+    S.current[kind==='daily'?'daily':'sup'] = {card:c, rank, idx, t:tbl[rank].t, x:tbl[rank].p[idx].x, fx:tbl[rank].p[idx].fx||[], note:''};
+    save(); render();
+  };
+  if(c.c==='joker'){
+    const html = '<p class="small muted">鬼牌是万能牌：从这张表里任选一个条目。</p><div class="pickgrid">' +
+      RANKS.map(r=>`<button data-r="${r}">${r} · ${(kind==='daily'?T.daily:T.super)[r].t}</button>`).join('') + '</div>';
+    modal('鬼牌 · 任选一项', html);
+    $('#modalhost').querySelectorAll('[data-r]').forEach(b=>{
+      b.onclick = () => { closeModal(); finish(b.getAttribute('data-r')); };
+    });
+    return;
+  }
+  finish(c.r);
+}
+ACT.drawMood = () => {
+  const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+  if(c.c==='joker'){ pickFromTable('mood', t => { S.current.mood = {card:c, text:t}; save(); render(); }); return; }
+  S.current.mood = {card:c, text:lookup('mood',c)}; save(); render();
+};
+ACT.drawDaily = () => drawEvent('daily');
+ACT.drawSuper = () => drawEvent('super');
+ACT.redrawEvent = el => { const k = el.getAttribute('data-arg');
+  if(k==='daily'){ const cur=S.current.daily; if(cur) S.seen.daily[cur.rank]--; S.current.daily=null; }
+  else { const cur=S.current.sup; if(cur) S.seen.super[cur.rank]--; S.current.sup=null; }
+  save(); render();
+};
+ACT.evtNote = el => {
+  const k = el.getAttribute('data-arg');
+  (k==='daily'?S.current.daily:S.current.sup).note = el.value; save();
+};
+
+function eventBlock(kind){
+  const cur = kind==='daily' ? S.current.daily : S.current.sup;
+  const title = kind==='daily' ? '日常事件' : '超能力事件';
+  const hint = kind==='daily'
+    ? '生活里的琐碎时刻——不是改变世界的大事，而是以微妙而人性的方式影响你的角色。'
+    : '世界上更大规模的事情。有时直接关系到你，有时只是从远处影响你。';
+  if(!cur) return `
+    <h3 class="mini">${title}</h3>
+    <div class="draw">
+      <div class="flipwrap"><div class="cardface back"></div></div>
+      <div class="result"><p class="body small muted">${hint}</p>
+      <button class="btn" data-act="${kind==='daily'?'drawDaily':'drawSuper'}">抽一张</button></div>
+    </div>`;
+  return `
+    <h3 class="mini">${title}</h3>
+    <div class="draw">
+      ${dealHTML(cur.card)}
+      <div class="result">
+        <div class="headline">${esc(cur.t)}<span class="small muted" style="margin-left:10px">第 ${cur.idx+1} 条</span></div>
+        <p class="body">${esc(cur.x)}</p>
+        ${cur.fx.length?`<div class="row" style="margin:10px 0">
+          ${cur.fx.map((f,i)=>`<button class="btn fx" data-act="fx" data-arg="${kind}:${i}">${esc(f.label)}</button>`).join('')}
+          ${cur.fx.length>1?'<span class="small muted">二选一</span>':''}
+        </div>`:''}
+        <label class="field"><span>这周发生了什么（写给自己看）</span>
+          <textarea rows="2" data-act="evtNote" data-arg="${kind}" placeholder="把细节补上，写信时用得着">${esc(cur.note)}</textarea></label>
+        <button class="btn tiny ghost" data-act="redrawEvent" data-arg="${kind}">这条触到雷区，弃掉重抽</button>
+      </div>
+    </div>`;
+}
+
+function panelTurn(){
+  if(S.phase === 'create')
+    return `<div class="sheet"><h2>本周</h2><p class="lede">先到「角色」页把角色创建完成，并把牌洗回牌堆，才会进入每周事件。</p></div>`;
+  const c = S.current;
+  const goalOpts = S.me.goals.map((g,i)=>`<option value="${i}">${esc(g.text)}（${g.filled}/${g.boxes}）</option>`).join('');
+  return `
+  <div class="sheet">
+    <h2>第 ${S.week} 周<span class="sub">收信 → 每周事件 → 写信</span></h2>
+    <p class="lede">读完对方的来信之后，走这四步：定情绪、抽日常事件、抽超能力事件、推进一个目标。抽到之前抽过的点数时，就读该条目的下一条提示——那是同一条故事线在往前走。</p>
+
+    <h3 class="mini">本周情绪</h3>
+    <div class="draw">
+      ${c.mood ? dealHTML(c.mood.card) : '<div class="flipwrap"><div class="cardface back"></div></div>'}
+      <div class="result">
+        <div class="headline">${c.mood?esc(c.mood.text):'尚未抽牌'}</div>
+        <p class="body small muted">角色这一周的整体心境。可能与他最近处理的某件事有关，也可能只是醒来时的状态。</p>
+        <button class="btn" data-act="drawMood">${c.mood?'重抽':'抽一张'}</button>
+      </div>
+    </div>
+
+    ${eventBlock('daily')}
+    ${eventBlock('super')}
+
+    <h3 class="mini">推进一个目标</h3>
+    ${S.me.goals.length?`
+      <div class="row">
+        <select id="goalsel" style="max-width:320px">${goalOpts}</select>
+        <button class="btn" data-act="advance">标记 1 点进度</button>
+        ${c.advanced?'<span class="tag gold">本周已推进</span>':'<span class="small muted">每周必须推进一个未完成的目标</span>'}
+      </div>
+      <p class="small muted" style="margin-top:8px">想一想这在故事里是什么样子：这一周他为此付出了怎样的努力？</p>
+    `:'<p class="small muted">还没有目标可推进。</p>'}
+
+    <div class="notice" style="margin-top:22px">
+      四步都做完之后，去写回信。信寄出后再结束本周。
+      <div class="row" style="margin-top:10px">
+        <button class="btn" data-act="tab" data-arg="write">去写信</button>
+        <button class="btn primary" data-act="endWeek">结束第 ${S.week} 周</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+ACT.advance = () => {
+  const i = +$('#goalsel').value; const g = S.me.goals[i];
+  if(!g) return;
+  if(g.filled >= g.boxes){ toast('这个目标已经完成了'); return; }
+  g.filled++; S.current.advanced = true; save(); checkRetire(); render();
+};
+ACT.endWeek = () => {
+  const c = S.current;
+  S.weeklog.push({
+    week:S.week,
+    mood:c.mood?c.mood.text:'',
+    daily:c.daily?{t:c.daily.t, i:c.daily.idx+1, x:c.daily.x, note:c.daily.note}:null,
+    sup:c.sup?{t:c.sup.t, i:c.sup.idx+1, x:c.sup.x, note:c.sup.note}:null,
+    advanced:c.advanced
+  });
+  S.week++;
+  S.current = {mood:null, daily:null, sup:null, advanced:false};
+  if(S.retireCountdown !== null && S.retireCountdown !== undefined){
+    S.retireCountdown--;
+    if(S.retireCountdown <= 0){ S.retireCountdown = 0; checkRetire(); }
+  }
+  save(); checkRetire(); render();
+  toast('第 '+(S.week-1)+' 周已归入日志');
+};
+
+/* ---------- 提示的机制效果 ---------- */
+function chooseFrom(title, items, cb){
+  if(!items.length){ toast('没有可选的对象'); return; }
+  modal(title, '<div class="pickgrid">' + items.map((t,i)=>`<button data-i="${i}">${esc(t)}</button>`).join('') + '</div>');
+  $('#modalhost').querySelectorAll('[data-i]').forEach(b=>{
+    b.onclick = () => { closeModal(); cb(+b.getAttribute('data-i')); };
+  });
+}
+ACT.fx = el => {
+  const [kind, i] = el.getAttribute('data-arg').split(':');
+  const cur = kind==='daily' ? S.current.daily : S.current.sup;
+  const f = cur.fx[+i];
+  applyFx(f.op, f.arg);
+};
+function applyFx(op, arg){
+  const m = S.me;
+  switch(op){
+    case 'scar+': ACT.addScar(); return;
+    case 'scar-':
+      chooseFrom('治愈哪一道伤痕？', m.scars.map(s=>s.text), i=>{ m.scars.splice(i,1); save(); render(); toast('伤痕已愈合'); });
+      return;
+    case 'risk+': m.risk++; break;
+    case 'risk-': m.risk = Math.max(0, m.risk-1); break;
+    case 'prog+':
+      chooseFrom('为哪个目标标记进度？', m.goals.map(g=>`${g.text}（${g.filled}/${g.boxes}）`), i=>{
+        const g = m.goals[i]; if(g.filled<g.boxes) g.filled++; save(); checkRetire(); render();
+      }); return;
+    case 'prog-':
+      chooseFrom('擦除哪个目标的进度？', m.goals.map(g=>`${g.text}（${g.filled}/${g.boxes}）`), i=>{
+        const g = m.goals[i];
+        if(g.filled>0) g.filled--; else { g.boxes++; toast('没有已勾的方框，改为多画一个空框'); }
+        save(); render();
+      }); return;
+    case 'poi+':
+      modal('获得一位关键人物', '<p class="small muted">抽牌决定他是谁，或者直接写下来。</p>',
+        `<button class="btn primary" data-act="fxPoiDraw">抽牌</button><button class="btn" data-act="fxPoiPick">从表里挑</button><button class="btn ghost" data-act="closemodal">取消</button>`);
+      return;
+    case 'poi-':
+      chooseFrom('失去哪一位关键人物？', m.pois.map(p=>p.role+(p.name?`（${p.name}）`:'')), i=>{ m.pois.splice(i,1); save(); render(); });
+      return;
+    case 'goal+': m.goals.push(newGoal(arg, '新')); toast('已添加目标：'+arg); break;
+    case 'mood+': ACT.drawMood(); return;
+    case 'front-': {
+      const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+      if(c.c==='joker'){ pickFromTable('front', t=>{ m.front = t; save(); render(); }); return; }
+      m.front = lookup('front', c); toast(`${cardLabel(c)} → 新掩护身份：${m.front}`); break;
+    }
+    case 'frontgoal-': {
+      m.front = '';
+      const gi = m.goals.findIndex(g=>g.kind==='日常');
+      if(gi>=0) m.goals.splice(gi,1);
+      toast('失去掩护身份与日常目标'); break;
+    }
+    case 'power+': {
+      const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+      if(c.c==='joker'){ pickFromTable('power', t=>{ m.powers.push(t); save(); render(); }); return; }
+      m.powers.push(lookup('power', c)); toast(`${cardLabel(c)} → 新能力：${lookup('power',c)}`); break;
+    }
+    case 'power-':
+      chooseFrom('失去哪一项超能力？', m.powers, i=>{ m.powers.splice(i,1); save(); render(); });
+      return;
+    case 'name-': m.hero = ''; toast('名字被擦除了'); break;
+    case 'world+': {
+      const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+      if(c.c==='joker'){ pickFromTable('world', t=>{ S.world={card:null,text:t,note:(S.world||{}).note||''}; save(); render(); }); return; }
+      S.world = {card:c, text:lookup('world',c), note:(S.world||{}).note||''};
+      toast('世界变了：'+S.world.text); break;
+    }
+    case 'retire2': S.retireCountdown = 2; toast('2 个回合后退场'); break;
+  }
+  save(); checkRetire(); render();
+}
+ACT.fxPoiDraw = () => { closeModal(); ACT.addPoiDraw(); };
+ACT.fxPoiPick = () => { closeModal(); ACT.addPoiPick(); };
+
+/* ==========================================================================
+   面板 4 · 写信
+   ========================================================================== */
+const KINDS = [
+  {id:'first',  n:'首封信'},
+  {id:'letter', n:'普通来信'},
+  {id:'news',   n:'新闻报道'},
+  {id:'obit',   n:'讣告'}
+];
+function paperById(id){ return PAPERS.find(p=>p.id===id) || PAPERS[0]; }
+
+function letterClasses(p){
+  return ['letter','f-'+p.font,'r-'+p.rule,'d-'+p.deco].join(' ');
+}
+function letterStyle(p){
+  return `--lp-bg:${p.bg};--lp-ink:${p.ink};--lp-accent:${p.accent}`;
+}
+function headForKind(kind){
+  if(kind==='news') return '<div class="lt-head">本  市  新  闻</div>';
+  if(kind==='obit') return '<div class="lt-head">讣  告</div>';
+  return '';
+}
+
+function panelWrite(){
+  const d = S.draft, p = paperById(d.paper);
+  const c = S.current;
+  const reminders = [
+    c.mood?`本周情绪：${c.mood.text}`:null,
+    c.daily?`日常事件 · ${c.daily.t}：${c.daily.note||c.daily.x}`:null,
+    c.sup?`超能力事件 · ${c.sup.t}：${c.sup.note||c.sup.x}`:null,
+    S.relationship?`你们的关系：${S.relationship.text}`:null,
+    S.me.feeling?'你对他的隐藏情感（别写破了）':null,
+    S.me.scars.length?`伤痕 ${S.me.scars.length} 道 · 风险 ${S.me.risk}`:null
+  ].filter(Boolean);
+
+  return `
+  <div class="sheet">
+    <h2>写信<span class="sub">第 ${S.week} 周</span></h2>
+    ${d.kind==='first'?`<div class="notice">
+      <b>首封信</b>要短，从世界构建与角色创建里汲取灵感。可以考虑这几条前提：
+      距你们上次交谈已过去了若干年；你联系对方的动机源于孤独；你们是同类中最强大的；对方或许能帮你达成目标。
+    </div>`:''}
+    ${S.retired&&d.kind!=='news'?`<div class="notice danger">你的角色已退场：${esc(S.retired.reason)}<br>
+      停下当前阶段，改写一篇新闻报道寄给对方，为故事收尾。以客观的第三方记者视角来写，并加一个标题。</div>`:''}
+
+    <div class="grid3" style="margin-bottom:6px">
+      <label class="field"><span>信件类型</span>
+        <select data-act="setKind">${KINDS.map(k=>`<option value="${k.id}" ${d.kind===k.id?'selected':''}>${k.n}</option>`).join('')}</select></label>
+      <label class="field"><span>写给</span><input type="text" data-act="setTo" value="${esc(d.to||S.foe.name)}" placeholder="宿敌的名号"></label>
+      <label class="field"><span>署名</span><input type="text" data-act="setFrom" value="${esc(d.from||S.me.hero)}" placeholder="你的名号"></label>
+    </div>
+
+    <h3 class="mini">信纸</h3>
+    <div class="papergrid">
+      ${PAPERS.map(x=>`<button class="swatch" data-act="setPaper" data-arg="${x.id}" aria-pressed="${d.paper===x.id}">${x.name}</button>`).join('')}
+    </div>
+
+    <label class="field"><span>正文</span>
+      <textarea id="letterbody" rows="12" data-act="setBody" placeholder="想写多少就写多少，只按你想象中角色会怎么写去写。">${esc(d.body)}</textarea></label>
+
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn" data-act="starter">抽一个话题引子</button>
+      <button class="btn ghost" data-act="clearBody">清空正文</button>
+      <span class="spacer" style="flex:1"></span>
+      <button class="btn primary" data-act="fileLetter">存入信箱</button>
+    </div>
+    ${reminders.length?`<div class="notice" style="border-left-color:var(--hair-strong);background:rgba(239,231,214,.04)">
+      <div class="small" style="color:var(--mist);margin-bottom:6px">写信时想着这一周</div>
+      ${reminders.map(r=>`<div class="small">${esc(r)}</div>`).join('')}
+    </div>`:''}
+
+    <h3 class="mini">预览与导出</h3>
+    <div class="letterstage">
+      <div class="${letterClasses(p)}" style="${letterStyle(p)}" id="preview">
+        <div class="lt-meta">第 ${S.week} 周</div>
+        ${headForKind(d.kind)}
+        ${(d.kind==='news'||d.kind==='obit'||!(d.to||S.foe.name))?'':`<div class="lt-to">${esc(d.to||S.foe.name)}：</div>`}
+        <div class="lt-body">${esc(d.body)||'<span style="opacity:.35">正文会显示在这里。</span>'}</div>
+        <div class="lt-sign">${esc(d.from||S.me.hero||'')}</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" data-act="printLetter">打印 / 存为 PDF</button>
+      <button class="btn" data-act="exportPNG">导出图片 PNG</button>
+      <button class="btn" data-act="exportLetterHTML">导出网页 HTML</button>
+      <button class="btn ghost" data-act="exportTXT">导出纯文本</button>
+      <button class="btn ghost" data-act="copyLetter">复制全文</button>
+    </div>
+  </div>`;
+}
+ACT.setKind = el => { S.draft.kind = el.value; if(el.value==='news'||el.value==='obit') S.draft.paper='press'; save(); render(); };
+ACT.setTo = el => { S.draft.to = el.value; save(); updatePreview(); };
+ACT.setFrom = el => { S.draft.from = el.value; save(); updatePreview(); };
+ACT.setPaper = el => { S.draft.paper = el.getAttribute('data-arg'); save(); render(); };
+ACT.setBody = el => { S.draft.body = el.value; save(); updatePreview(); };
+ACT.clearBody = () => { S.draft.body=''; save(); render(); };
+function updatePreview(){
+  const pv = $('#preview'); if(!pv) return;
+  const d = S.draft;
+  pv.querySelector('.lt-body').innerHTML = esc(d.body) || '<span style="opacity:.35">正文会显示在这里。</span>';
+  const to = pv.querySelector('.lt-to'); if(to) to.textContent = (d.to||S.foe.name||'') + '：';
+  pv.querySelector('.lt-sign').textContent = d.from||S.me.hero||'';
+}
+ACT.starter = () => {
+  const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+  const q = c.c==='joker' ? T.starter[RANKS[Math.floor(Math.random()*13)]] : lookup('starter', c);
+  S.draft.body = (S.draft.body ? S.draft.body.replace(/\s*$/,'') + '\n\n' : '') + q + '\n';
+  save(); render(); toast(cardLabel(c)+' · 已插入信末');
+};
+ACT.fileLetter = () => {
+  const d = S.draft;
+  if(!d.body.trim()){ toast('正文还是空的'); return; }
+  S.letters.push({id:Date.now(), week:S.week, dir:'out', kind:d.kind,
+    to:d.to||S.foe.name, from:d.from||S.me.hero, paper:d.paper, body:d.body, ts:new Date().toISOString()});
+  S.draft = {to:d.to, from:d.from, paper:d.paper, kind:d.kind==='first'?'letter':d.kind, body:''};
+  save(); render(); toast('已存入信箱');
+};
+ACT.copyLetter = () => {
+  const t = plainLetter();
+  navigator.clipboard ? navigator.clipboard.writeText(t).then(()=>toast('已复制'), ()=>fallbackCopy(t)) : fallbackCopy(t);
+};
+function fallbackCopy(t){
+  const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta);
+  ta.select(); try{ document.execCommand('copy'); toast('已复制'); }catch(e){ toast('复制失败，请手动选择'); }
+  ta.remove();
+}
+function plainLetter(d){
+  d = d || S.draft;
+  const head = d.kind==='news' ? '【新闻报道】\n' : (d.kind==='obit' ? '【讣告】\n' : '');
+  const to = (d.kind==='news'||d.kind==='obit') ? '' : ((d.to||S.foe.name||'')+'：\n\n');
+  return head + to + d.body + '\n\n' + (d.from||S.me.hero||'');
+}
+function download(name, text, mime){
+  const blob = new Blob([text], {type:(mime||'text/plain')+';charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+ACT.exportTXT = () => download(`荣光之影_第${S.week}周_${S.draft.from||'信'}.txt`, plainLetter());
+ACT.exportLetterHTML = () => {
+  const d = S.draft, p = paperById(d.paper);
+  const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>荣光之影 · 第${S.week}周</title><style>
+body{margin:0;background:#203035;display:grid;place-items:center;padding:30px;font-family:"Songti SC","SimSun",serif}
+.sheet{width:720px;max-width:100%;background:${p.bg};color:${p.ink};padding:56px 60px;line-height:2.05;font-size:16px;
+box-shadow:0 20px 50px rgba(0,0,0,.45);${p.font==='mono'?'font-family:Menlo,Consolas,monospace;':''}${p.font==='sans'?'font-family:"PingFang SC","Microsoft YaHei",sans-serif;':''}}
+.to,.sign{color:${p.accent}} .sign{text-align:right;margin-top:26px} .body{white-space:pre-wrap}
+@media print{body{background:#fff;padding:0}.sheet{box-shadow:none;width:auto}}
+</style></head><body><div class="sheet">
+${d.kind==='news'?'<div class="to">本市新闻</div>':''}${d.kind==='obit'?'<div class="to">讣告</div>':''}
+${(d.kind==='news'||d.kind==='obit')?'':`<div class="to">${esc(d.to||S.foe.name||'')}：</div>`}
+<div class="body">${esc(d.body)}</div><div class="sign">${esc(d.from||S.me.hero||'')}</div>
+</div></body></html>`;
+  download(`荣光之影_第${S.week}周.html`, html, 'text/html');
+};
+ACT.printLetter = () => {
+  const d = S.draft, p = paperById(d.paper);
+  $('#printarea').innerHTML = `<div class="printletter" style="${letterStyle(p)}">
+    ${(d.kind==='news'||d.kind==='obit')?`<div class="lt-to">${d.kind==='news'?'本市新闻':'讣告'}</div>`:`<div class="lt-to">${esc(d.to||S.foe.name||'')}：</div>`}
+    <div class="lt-body">${esc(d.body)}</div>
+    <div class="lt-sign">${esc(d.from||S.me.hero||'')}</div></div>`;
+  document.body.classList.add('printing-letter');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('printing-letter'), 600);
+};
+
+/* PNG 导出：直接画在 canvas 上，完全离线 */
+ACT.exportPNG = () => {
+  const d = S.draft, p = paperById(d.paper);
+  const W = 1240, H = 1754, pad = 108;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  g.fillStyle = p.bg; g.fillRect(0,0,W,H);
+
+  const serif = '"Songti SC","SimSun",Georgia,serif';
+  const sans  = '"PingFang SC","Microsoft YaHei",sans-serif';
+  const mono  = 'Menlo,Consolas,"Courier New",monospace';
+  const fam = p.font==='mono' ? mono : (p.font==='sans' ? sans : serif);
+  const lh = 46, fs = 25;
+
+  if(p.rule==='lines' || p.rule==='grid'){
+    g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 1;
+    for(let y=pad+lh; y<H-pad; y+=lh){ g.beginPath(); g.moveTo(pad,y+.5); g.lineTo(W-pad,y+.5); g.stroke(); }
+    if(p.rule==='grid'){ g.strokeStyle='rgba(0,0,0,.07)';
+      for(let x=pad; x<W-pad; x+=lh){ g.beginPath(); g.moveTo(x+.5,pad); g.lineTo(x+.5,H-pad); g.stroke(); } }
+  }
+  if(p.deco==='margin'){ g.strokeStyle='rgba(140,40,40,.4)'; g.beginPath(); g.moveTo(pad-26,0); g.lineTo(pad-26,H); g.stroke(); }
+  if(p.deco==='perf'){ g.strokeStyle='rgba(0,0,0,.3)'; g.setLineDash([10,8]);
+    [pad/2, H-pad/2].forEach(y=>{ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }); g.setLineDash([]); }
+  if(p.deco==='edge'){ g.strokeStyle='rgba(255,255,255,.10)'; g.lineWidth=2; g.strokeRect(30,30,W-60,H-60); }
+
+  let y = pad;
+  g.textBaseline = 'top';
+  g.fillStyle = p.accent;
+  if(d.kind==='news' || d.kind==='obit'){
+    g.font = `500 30px ${fam}`;
+    const t = d.kind==='news' ? '本  市  新  闻' : '讣　　告';
+    g.textAlign = 'center'; g.fillText(t, W/2, y);
+    g.textAlign = 'left';
+    g.strokeStyle = p.accent; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(pad, y+52); g.lineTo(W-pad, y+52); g.stroke();
+    y += 96;
+  }else{
+    g.font = `500 28px ${fam}`;
+    g.fillText((d.to||S.foe.name||'') + '：', pad, y);
+    y += 66;
+  }
+  g.fillStyle = p.ink; g.font = `${fs}px ${fam}`;
+  const maxW = W - pad*2;
+  for(const para of String(d.body).split('\n')){
+    if(!para){ y += lh*0.6; continue; }
+    let line = '';
+    for(const ch of para){
+      if(g.measureText(line+ch).width > maxW){ g.fillText(line, pad, y); y += lh; line = ch; }
+      else line += ch;
+      if(y > H - pad - lh*3){ break; }
+    }
+    if(line) { g.fillText(line, pad, y); y += lh; }
+    if(y > H - pad - lh*3){ g.fillText('……', pad, y); y += lh; break; }
+  }
+  g.fillStyle = p.accent; g.font = `500 26px ${fam}`; g.textAlign = 'right';
+  g.fillText(d.from||S.me.hero||'', W-pad, Math.min(y+40, H-pad-40));
+  g.textAlign = 'left'; g.font = `16px ${sans}`; g.fillStyle = p.ink; g.globalAlpha = .4;
+  g.fillText(`第 ${S.week} 周 · 荣光之影`, pad, H-pad+14);
+  g.globalAlpha = 1;
+
+  cv.toBlob(b=>{
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = `荣光之影_第${S.week}周.png`;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+  toast('图片已生成');
+};
+
+/* ==========================================================================
+   面板 5 · 信箱
+   ========================================================================== */
+function panelMail(){
+  const ls = S.letters.slice().reverse();
+  return `
+  <div class="sheet">
+    <h2>信箱<span class="sub">${S.letters.length} 封</span></h2>
+    <p class="lede">寄出的信和收到的信都放在这里。收到对方来信时贴进来，这份记录连同周志就是你们这一局的全部故事。</p>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn" data-act="addIncoming">贴入对方来信</button>
+      <button class="btn ghost" data-act="exportAll">导出全部信件</button>
+    </div>
+    ${ls.length ? ls.map(l=>`
+      <div class="mailrow" data-act="openLetter" data-arg="${l.id}">
+        <span class="wk">第${l.week}周</span>
+        <span class="tag ${l.dir==='in'?'':'red'}">${l.dir==='in'?'来信':'寄出'}</span>
+        <span class="ex">${esc(l.body.slice(0,60).replace(/\n/g,' '))}</span>
+      </div>`).join('') : '<p class="small muted">还没有信。写完第一封，它就会出现在这里。</p>'}
+  </div>
+
+  <div class="sheet">
+    <h2>周志</h2>
+    ${S.weeklog.length ? S.weeklog.slice().reverse().map(w=>`
+      <div class="weekcard">
+        <h4>第 ${w.week} 周${w.mood?` · ${esc(w.mood)}`:''}</h4>
+        ${w.daily?`<div class="line"><b>日常</b>${esc(w.daily.t)}（${w.daily.i}）${esc(w.daily.note||'')}</div>`:''}
+        ${w.sup?`<div class="line"><b>超能力</b>${esc(w.sup.t)}（${w.sup.i}）${esc(w.sup.note||'')}</div>`:''}
+        ${w.advanced?'<div class="line"><b>目标</b>推进了 1 点</div>':''}
+      </div>`).join('') : '<p class="small muted">还没有结束过任何一周。</p>'}
+  </div>`;
+}
+ACT.addIncoming = () => {
+  modal('贴入对方来信', `<label class="field"><span>来信正文</span><textarea id="inbody" rows="8"></textarea></label>`,
+    `<button class="btn primary" id="inok">存入</button><button class="btn ghost" data-act="closemodal">取消</button>`);
+  $('#inok').onclick = () => {
+    const t = $('#inbody').value.trim(); if(!t) return;
+    S.letters.push({id:Date.now(), week:S.week, dir:'in', kind:'letter', to:S.me.hero, from:S.foe.name, paper:'aged', body:t, ts:new Date().toISOString()});
+    closeModal(); save(); render(); toast('已存入信箱');
+  };
+};
+ACT.openLetter = el => {
+  const l = S.letters.find(x=>x.id === +el.getAttribute('data-arg'));
+  if(!l) return;
+  const p = paperById(l.paper);
+  modal(`第 ${l.week} 周 · ${l.dir==='in'?'来信':'寄出'}`,
+    `<div class="${letterClasses(p)}" style="${letterStyle(p)};box-shadow:none;padding:28px 30px;font-size:15px;min-height:0">
+      ${(l.kind==='news'||l.kind==='obit')?headForKind(l.kind):`<div class="lt-to">${esc(l.to||'')}：</div>`}
+      <div class="lt-body">${esc(l.body)}</div><div class="lt-sign">${esc(l.from||'')}</div></div>`,
+    `<button class="btn" data-act="reuseLetter" data-arg="${l.id}">载入编辑器</button>
+     <button class="btn ghost" data-act="delLetter" data-arg="${l.id}">删除</button>
+     <button class="btn ghost" data-act="closemodal">关闭</button>`);
+};
+ACT.reuseLetter = el => {
+  const l = S.letters.find(x=>x.id === +el.getAttribute('data-arg'));
+  S.draft = {to:l.to, from:l.from, paper:l.paper, kind:l.kind, body:l.body};
+  closeModal(); tab='write'; save(); render();
+};
+ACT.delLetter = el => {
+  const id = +el.getAttribute('data-arg');
+  S.letters = S.letters.filter(x=>x.id!==id); closeModal(); save(); render();
+};
+ACT.exportAll = () => {
+  const t = S.letters.map(l=>`── 第${l.week}周 · ${l.dir==='in'?'来信':'寄出'} ──\n${plainLetter(l)}`).join('\n\n');
+  download('荣光之影_全部信件.txt', t || '（空）');
+};
+
+/* ==========================================================================
+   面板 6 · 查表
+   ========================================================================== */
+function tableHTML(meta){
+  const rows = RANKS.map(r => meta.dual
+    ? `<tr><td class="rk">${r}</td><td class="blk">${esc(meta.data[r][0])}</td><td class="red">${esc(meta.data[r][1])}</td></tr>`
+    : `<tr><td class="rk">${r}</td><td class="blk" colspan="2">${esc(meta.data[r])}</td></tr>`).join('');
+  return `<h3 class="mini">${meta.name}</h3>
+    <table class="lookup"><thead><tr><th>牌</th><th>${meta.dual?'♠ ♣ 黑色牌':'条目'}</th><th>${meta.dual?'♥ ♦ 红色牌':''}</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+function eventListHTML(tbl){
+  return RANKS.map(r=>`<details class="evt"><summary>${r} · ${tbl[r].t}</summary>
+    <ol>${tbl[r].p.map(p=>`<li>${esc(p.x)}${p.fx&&p.fx.length?` <b>${p.fx.map(f=>f.label).join(' 或 ')}</b>`:''}</li>`).join('')}</ol></details>`).join('');
+}
+function panelTables(){
+  return `
+  <div class="sheet">
+    <h2>查表</h2>
+    <p class="lede">抽到鬼牌时可以从当前所查的表里任选一项。触到你们约定回避的话题时，弃掉那张牌重抽。</p>
+    ${TABLE_META.map(tableHTML).join('')}
+  </div>
+  <div class="sheet"><h2>日常事件</h2>
+    <p class="lede">每个点数有四条提示，第一次抽到读第 1 条，之后每次再抽到同一点数就往下读一条。</p>
+    ${eventListHTML(T.daily)}</div>
+  <div class="sheet"><h2>超能力事件</h2>${eventListHTML(T.super)}</div>`;
+}
+
+/* ==========================================================================
+   面板 7 · 牌与打印
+   ========================================================================== */
+function panelCards(){
+  const anyTable = TABLE_META.map(m=>`<option value="${m.key}">${m.name}</option>`).join('');
+  return `
+  <div class="sheet">
+    <h2>牌堆<span class="sub">54 张，含两张鬼牌</span></h2>
+    <div class="row" style="margin-bottom:14px">
+      <span class="stat">牌堆 <b>${S.deck.length}</b></span>
+      <span class="stat">弃牌 <b>${S.discard.length}</b></span>
+      <span class="stat">手牌 <b>${S.hand.length}</b></span>
+      <button class="btn" data-act="reshuffle">重洗全部</button>
+      <span class="small muted">牌堆用尽即为退场条件之一，正式游戏中不要随手重洗。</span>
+    </div>
+    <h3 class="mini">随手抽一张</h3>
+    <div class="row" style="margin-bottom:12px">
+      <select id="freetable" style="max-width:220px">${anyTable}</select>
+      <button class="btn" data-act="freeDraw">抽牌查表</button>
+    </div>
+    ${lastFree?`<div class="draw">${dealHTML(lastFree.card)}
+      <div class="result"><div class="headline">${esc(lastFree.text)}</div>
+      <p class="body small muted">${esc(lastFree.table)} · ${cardLabel(lastFree.card)}</p></div></div>`:''}
+  </div>
+
+  <div class="sheet">
+    <h2>打印</h2>
+    <p class="lede">没有实体扑克也能玩：把牌面印出来剪开即可（63×88mm，每页 9 张）。速查卡把同一点数在所有表里的条目印在一张上，抽牌之后不必再翻书。</p>
+    <div class="row">
+      <button class="btn" data-act="printDeck">打印 54 张牌面</button>
+      <button class="btn" data-act="printBacks">打印牌背（双面用）</button>
+      <button class="btn" data-act="printRef">打印 13 张速查卡</button>
+    </div>
+    <p class="small muted" style="margin-top:10px">在打印对话框里关掉页眉页脚、开启“背景图形”，效果最好。</p>
+  </div>`;
+}
+ACT.reshuffle = reshuffleAll;
+let lastFree = null;
+ACT.freeDraw = () => {
+  const key = $('#freetable').value;
+  const c = drawCard(); if(!c){ toast('牌堆空了'); return; }
+  const name = TABLE_META.find(m=>m.key===key).name;
+  const show = txt => { lastFree = {card:c, text:txt, table:name}; save(); render(); };
+  if(c.c==='joker'){ pickFromTable(key, show); return; }
+  show(lookup(key, c));
+};
+
+function pcardHTML(c){
+  if(c.c==='joker') return `<div class="pcard"><div class="ix tl"><span class="r">王</span></div>
+    <div class="center" style="font-size:16pt;letter-spacing:.4em">JOKER</div>
+    <div class="ix br"><span class="r">王</span></div><div class="foot">荣光之影</div></div>`;
+  return `<div class="pcard ${c.c==='red'?'red':''}">
+    <div class="ix tl"><span class="r">${c.r}</span><span class="s">${c.s}</span></div>
+    <div class="center">${c.s}</div>
+    <div class="ix br"><span class="r">${c.r}</span><span class="s">${c.s}</span></div>
+    <div class="foot">荣光之影</div></div>`;
+}
+function doPrint(html){
+  $('#printarea').innerHTML = html;
+  document.body.classList.add('printing');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('printing'), 600);
+}
+ACT.printDeck = () => {
+  const all = [];
+  for(const su of SUITS) for(const r of RANKS) all.push({r, s:su.s, c:su.c});
+  all.push({r:'王',s:'★',c:'joker'}, {r:'王',s:'☆',c:'joker'});
+  let html = '', page = '';
+  all.forEach((c,i)=>{
+    page += pcardHTML(c);
+    if((i+1)%9===0){ html += `<div class="psheet">${page}</div>`; page=''; }
+  });
+  if(page) html += `<div class="psheet">${page}</div>`;
+  doPrint(html);
+};
+ACT.printBacks = () => {
+  doPrint(`<div class="psheet">${'<div class="pcard back"></div>'.repeat(9)}</div>`);
+};
+ACT.printRef = () => {
+  const cards = RANKS.map(r=>{
+    const dl = key => {
+      const m = TABLE_META.find(x=>x.key===key);
+      const v = m.dual
+        ? `<span class="b">${esc(m.data[r][0])}</span><span class="r">${esc(m.data[r][1])}</span>`
+        : esc(m.data[r]);
+      return `<dl><dt>${m.name}</dt><dd>${v}</dd></dl>`;
+    };
+    const ev = (tbl,name) => `<div class="ev"><div style="font-size:6.4pt;color:#8e1f28;letter-spacing:.12em">${name}：${tbl[r].t}</div>
+      <ol>${tbl[r].p.map(p=>`<li>${esc(p.x)}${p.fx&&p.fx.length?` <b>${esc(p.fx.map(f=>f.label).join(' 或 '))}</b>`:''}</li>`).join('')}</ol></div>`;
+    return `<div class="refcard">
+      <h4>${r}<span>荣光之影 · 速查卡</span></h4>
+      <div class="cols">
+        ${['world','powerRule','power','front','lair','poi','mundaneGoal','superGoal','relationship','feeling','mood','starter'].map(dl).join('')}
+        ${ev(T.daily,'日常事件')}
+        ${ev(T.super,'超能力事件')}
+      </div></div>`;
+  });
+  let html = '';
+  for(let i=0;i<cards.length;i+=2) html += `<div style="page-break-after:always">${cards.slice(i,i+2).join('')}</div>`;
+  doPrint(html);
+};
+
+/* ==========================================================================
+   面板 8 · 规则与存档
+   ========================================================================== */
+function panelAbout(){
+  return `
+  <div class="sheet">
+    <h2>一回合怎么走</h2>
+    <div class="grid2">
+      <div>
+        <h3 class="mini">三个阶段</h3>
+        <p class="small">收信 → 每周事件 → 写信。只有收到对方的信，回合才开始，两人轮流进行。</p>
+        <h3 class="mini">每周事件的四步</h3>
+        <p class="small">决定情绪 · 日常事件 · 超能力事件 · 为一个目标推进 1 步。</p>
+        <h3 class="mini">退场条件</h3>
+        <p class="small">伤痕达到 4 道 · 风险值达到 4 · 所有目标完成 · 提示要求退场 · 牌堆用完。<br>
+        退场时停下当前阶段，改写一篇新闻报道寄给对方；对方可以回一篇讣告作为最后的告别。</p>
+      </div>
+      <div>
+        <h3 class="mini">写信时想着</h3>
+        <p class="small">过去一周的事件 · 这一周的情绪 · 你们的关系 · 你对他的隐藏情感 · 新获得的伤痕 · 目标上的进退。<br>
+        永远不要与对方描述过的内容相矛盾。收到的信里关于世界的陈述都视为真实。</p>
+        <h3 class="mini">日志模式</h3>
+        <p class="small">也可以当作单人日志游戏来玩：按周记录，倾向于用简短的段落做概括。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <h2>存档</h2>
+    <p class="lede">进度保存在这台设备的浏览器里。换设备、清理缓存或想留底稿时，用下面的文件导出／导入。${storageWorks?'':'<br><b>当前浏览器禁用了本地存储，这一局只存在内存里，离开页面就会丢失——请及时导出文件。</b>'}</p>
+    <div class="row">
+      <button class="btn" data-act="exportSave">导出存档文件</button>
+      <button class="btn" data-act="importSave">导入存档文件</button>
+      <button class="btn ghost" data-act="resetAll">重开一局</button>
+    </div>
+    <input type="file" id="savefile" accept="application/json" style="display:none">
+  </div>
+
+  <div class="sheet">
+    <h2>致谢与许可</h2>
+    <p class="small">《In the Shadow of Glory》由 Jessie Lee 与 Brandon Lee 撰写，以 CC BY 4.0 许可发布。
+    编辑 Claudia Scarth，美术 Brandon Lee，诗歌 Reizor。原作见 the-ravensridge-press.itch.io 与 theravensridgeemporium.com。</p>
+    <p class="small">本页面是依据该许可制作的中文离线辅助工具，同样以 CC BY 4.0 发布：可自由分发、修改、上传到任何平台，保留署名即可。
+    整个工具是单个 HTML 文件，不联网、不收集任何数据，双击即可打开。</p>
+    <p class="small muted">规则条文与表格译自原书，仅供游玩使用；请支持原作者。</p>
+  </div>`;
+}
+ACT.exportSave = () => download(`荣光之影_存档_第${S.week}周.json`, JSON.stringify(S,null,1), 'application/json');
+ACT.importSave = () => {
+  const f = $('#savefile');
+  f.onchange = () => {
+    const file = f.files[0]; if(!file) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try{
+        const o = JSON.parse(rd.result);
+        if(!o || o.v!==1) throw 0;
+        S = Object.assign(freshState(), o); save(); render(); toast('存档已载入');
+      }catch(e){ toast('这个文件读不出来'); }
+    };
+    rd.readAsText(file);
+  };
+  f.click();
+};
+ACT.resetAll = () => {
+  modal('重开一局？', '<p class="small">当前角色、信件与周志都会被清空。建议先导出存档文件。</p>',
+    `<button class="btn primary" id="rsok">确认重开</button><button class="btn ghost" data-act="closemodal">取消</button>`);
+  $('#rsok').onclick = () => { S = freshState(); S.deck = buildDeck(); closeModal(); tab='setup'; save(); render(); };
+};
+
+/* ==========================================================================
+   渲染
+   ========================================================================== */
+const PANELS = {setup:panelSetup, char:panelChar, turn:panelTurn, write:panelWrite,
+                mail:panelMail, tables:panelTables, cards:panelCards, about:panelAbout};
+function render(){
+  renderNav(); renderStatus();
+  for(const id of Object.keys(PANELS)){
+    const el = $('#p-'+id);
+    if(id === tab){ el.innerHTML = PANELS[id](); el.style.display=''; bind(el); }
+    else { el.innerHTML = ''; el.style.display='none'; }
+  }
+}
+ensureDeck();
+if(!load()){ S.deck = buildDeck(); save(); }
+ensureDeck();
+render();
+window.addEventListener('beforeunload', save);
+
+</script>
+</body>
+</html>
