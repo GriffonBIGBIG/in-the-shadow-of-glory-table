@@ -1102,7 +1102,9 @@ function panelChar(){
     <div class="head">
       <h2>${esc(m.hero||'无名者')}<small>${esc(m.civil?'日常姓名 '+m.civil:'')}</small></h2>
       <div class="row">
-        ${S.side?`<span class="tag gold">${esc(S.side)}</span>`:''}
+        <span class="tag gold">${esc(S.side||'身份未定')}</span>
+        <button class="btn tiny ghost" data-act="setSide" data-arg="英雄" title="随时可改">定为英雄</button>
+        <button class="btn tiny ghost" data-act="setSide" data-arg="反派" title="随时可改">定为反派</button>
         ${S.relationship?`<span class="tag">${esc(S.relationship.text)}</span>`:''}
       </div>
     </div>
